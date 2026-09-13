@@ -1,0 +1,27 @@
+#[derive(Debug, Clone)]
+pub(crate) struct PostLocaleEditor {
+    pub(crate) title: String,
+    pub(crate) slug: String,
+    pub(crate) description: String,
+    pub(crate) paragraph: String,
+}
+
+impl PostLocaleEditor {
+    pub(crate) fn french_default() -> Self {
+        Self {
+            title: "Nouvel article Bezot Corp".to_string(),
+            slug: "blog/nouvel-article".to_string(),
+            description: "Article édité depuis Bezot Project Studio.".to_string(),
+            paragraph: "Texte de l’article à compléter.".to_string(),
+        }
+    }
+
+    pub(crate) fn english_default() -> Self {
+        Self {
+            title: "New Bezot Corp article".to_string(),
+            slug: "blog/new-article".to_string(),
+            description: "Article edited from Bezot Project Studio.".to_string(),
+            paragraph: "Article text to complete.".to_string(),
+        }
+    }
+}

@@ -1,2 +1,25 @@
 #[derive(Debug, Clone)]
-pub(crate) enum Message {}
+pub(crate) enum Message {
+    ReloadContent,
+    SelectEntry(String),
+    NewPost,
+    SavePost,
+    SearchQueryChanged(String),
+    ShowAllContent,
+    ShowPages,
+    ShowPosts,
+    PreviousPage,
+    NextPage,
+    PostIdChanged(String),
+    PostDateChanged(String),
+    PostStatusChanged(String),
+    PostAuthorChanged(String),
+    PostFrenchTitleChanged(String),
+    PostFrenchSlugChanged(String),
+    PostFrenchDescriptionChanged(String),
+    PostFrenchParagraphChanged(String),
+    PostEnglishTitleChanged(String),
+    PostEnglishSlugChanged(String),
+    PostEnglishDescriptionChanged(String),
+    PostEnglishParagraphChanged(String),
+}
