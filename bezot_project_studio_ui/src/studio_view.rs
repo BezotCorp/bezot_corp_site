@@ -124,18 +124,32 @@ fn post_editor_view(editor: &PostEditorState) -> Element<'_, Message> {
         locale_editor_view(
             "Français",
             &editor.fr,
-            Message::PostFrenchTitleChanged,
-            Message::PostFrenchSlugChanged,
-            Message::PostFrenchDescriptionChanged,
-            Message::PostFrenchParagraphChanged,
+            LocaleEditorMessages {
+                title_changed: Message::PostFrenchTitleChanged,
+                slug_changed: Message::PostFrenchSlugChanged,
+                description_changed: Message::PostFrenchDescriptionChanged,
+                paragraph_changed: Message::PostFrenchParagraphChanged,
+                affiliate_title_changed: Message::PostFrenchAffiliateTitleChanged,
+                affiliate_text_changed: Message::PostFrenchAffiliateTextChanged,
+                affiliate_url_changed: Message::PostFrenchAffiliateUrlChanged,
+                affiliate_label_changed: Message::PostFrenchAffiliateLabelChanged,
+                affiliate_disclosure_changed: Message::PostFrenchAffiliateDisclosureChanged,
+            },
         ),
         locale_editor_view(
             "Anglais",
             &editor.en,
-            Message::PostEnglishTitleChanged,
-            Message::PostEnglishSlugChanged,
-            Message::PostEnglishDescriptionChanged,
-            Message::PostEnglishParagraphChanged,
+            LocaleEditorMessages {
+                title_changed: Message::PostEnglishTitleChanged,
+                slug_changed: Message::PostEnglishSlugChanged,
+                description_changed: Message::PostEnglishDescriptionChanged,
+                paragraph_changed: Message::PostEnglishParagraphChanged,
+                affiliate_title_changed: Message::PostEnglishAffiliateTitleChanged,
+                affiliate_text_changed: Message::PostEnglishAffiliateTextChanged,
+                affiliate_url_changed: Message::PostEnglishAffiliateUrlChanged,
+                affiliate_label_changed: Message::PostEnglishAffiliateLabelChanged,
+                affiliate_disclosure_changed: Message::PostEnglishAffiliateDisclosureChanged,
+            },
         ),
     ]
     .spacing(10)
@@ -150,20 +164,60 @@ fn post_editor_view(editor: &PostEditorState) -> Element<'_, Message> {
 fn locale_editor_view<'a>(
     title: &'a str,
     editor: &'a PostLocaleEditor,
+    messages: LocaleEditorMessages,
+) -> Element<'a, Message> {
+    column![
+        text(title).size(18),
+        labeled_input("Titre", &editor.title, messages.title_changed),
+        labeled_input("Slug", &editor.slug, messages.slug_changed),
+        labeled_input(
+            "Description SEO",
+            &editor.description,
+            messages.description_changed
+        ),
+        labeled_input("Paragraphe", &editor.paragraph, messages.paragraph_changed),
+        text("Monétisation / affiliation").size(16),
+        labeled_input(
+            "Titre encart affilié",
+            &editor.affiliate_title,
+            messages.affiliate_title_changed
+        ),
+        labeled_input(
+            "Texte encart affilié",
+            &editor.affiliate_text,
+            messages.affiliate_text_changed
+        ),
+        labeled_input(
+            "URL affiliée ou sponsorisée",
+            &editor.affiliate_url,
+            messages.affiliate_url_changed
+        ),
+        labeled_input(
+            "Libellé du bouton",
+            &editor.affiliate_label,
+            messages.affiliate_label_changed
+        ),
+        labeled_input(
+            "Mention visible",
+            &editor.affiliate_disclosure,
+            messages.affiliate_disclosure_changed
+        ),
+    ]
+    .spacing(8)
+    .into()
+}
+
+#[derive(Clone, Copy)]
+struct LocaleEditorMessages {
     title_changed: fn(String) -> Message,
     slug_changed: fn(String) -> Message,
     description_changed: fn(String) -> Message,
     paragraph_changed: fn(String) -> Message,
-) -> Element<'a, Message> {
-    column![
-        text(title).size(18),
-        labeled_input("Titre", &editor.title, title_changed),
-        labeled_input("Slug", &editor.slug, slug_changed),
-        labeled_input("Description SEO", &editor.description, description_changed),
-        labeled_input("Paragraphe", &editor.paragraph, paragraph_changed),
-    ]
-    .spacing(8)
-    .into()
+    affiliate_title_changed: fn(String) -> Message,
+    affiliate_text_changed: fn(String) -> Message,
+    affiliate_url_changed: fn(String) -> Message,
+    affiliate_label_changed: fn(String) -> Message,
+    affiliate_disclosure_changed: fn(String) -> Message,
 }
 
 fn filter_button(

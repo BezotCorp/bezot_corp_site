@@ -52,6 +52,12 @@ pub struct PostBlockPropsDocument {
     pub subtitle: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub disclosure: Option<String>,
 }
 
 impl From<&PostEditorState> for PostDocument {
@@ -63,7 +69,7 @@ impl From<&PostEditorState> for PostDocument {
                 editor.fr.slug.clone(),
                 editor.fr.title.clone(),
                 editor.fr.description.clone(),
-                editor.fr.paragraph.clone(),
+                &editor.fr,
             ),
         );
         locales.insert(
@@ -72,7 +78,7 @@ impl From<&PostEditorState> for PostDocument {
                 editor.en.slug.clone(),
                 editor.en.title.clone(),
                 editor.en.description.clone(),
-                editor.en.paragraph.clone(),
+                &editor.en,
             ),
         );
 
@@ -89,7 +95,51 @@ impl From<&PostEditorState> for PostDocument {
 }
 
 impl PostLocaleDocument {
-    fn new(slug: String, title: String, description: String, paragraph: String) -> Self {
+    fn new(
+        slug: String,
+        title: String,
+        description: String,
+        editor: &crate::post_locale_editor::PostLocaleEditor,
+    ) -> Self {
+        let mut blocks = vec![
+            PostBlockDocument {
+                kind: "hero".to_string(),
+                props: PostBlockPropsDocument {
+                    title: Some(title.clone()),
+                    subtitle: Some("Édité depuis Bezot Project Studio.".to_string()),
+                    text: None,
+                    url: None,
+                    label: None,
+                    disclosure: None,
+                },
+            },
+            PostBlockDocument {
+                kind: "paragraph".to_string(),
+                props: PostBlockPropsDocument {
+                    title: None,
+                    subtitle: None,
+                    text: Some(editor.paragraph.clone()),
+                    url: None,
+                    label: None,
+                    disclosure: None,
+                },
+            },
+        ];
+
+        if !editor.affiliate_url.trim().is_empty() {
+            blocks.push(PostBlockDocument {
+                kind: "affiliate_callout".to_string(),
+                props: PostBlockPropsDocument {
+                    title: Some(editor.affiliate_title.clone()),
+                    subtitle: None,
+                    text: Some(editor.affiliate_text.clone()),
+                    url: Some(editor.affiliate_url.clone()),
+                    label: Some(editor.affiliate_label.clone()),
+                    disclosure: Some(editor.affiliate_disclosure.clone()),
+                },
+            });
+        }
+
         Self {
             slug,
             seo: PostSeoDocument {
@@ -99,24 +149,7 @@ impl PostLocaleDocument {
                 og_description: description,
                 og_image: "/og/bezot-corp-default.png".to_string(),
             },
-            blocks: vec![
-                PostBlockDocument {
-                    kind: "hero".to_string(),
-                    props: PostBlockPropsDocument {
-                        title: Some(title),
-                        subtitle: Some("Édité depuis Bezot Project Studio.".to_string()),
-                        text: None,
-                    },
-                },
-                PostBlockDocument {
-                    kind: "paragraph".to_string(),
-                    props: PostBlockPropsDocument {
-                        title: None,
-                        subtitle: None,
-                        text: Some(paragraph),
-                    },
-                },
-            ],
+            blocks,
         }
     }
 }

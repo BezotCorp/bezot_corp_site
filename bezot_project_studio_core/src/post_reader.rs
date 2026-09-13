@@ -71,6 +71,11 @@ fn locale_editor_from_value(locale: &Value) -> io::Result<PostLocaleEditor> {
             .unwrap_or("")
             .to_string(),
         paragraph: first_paragraph(locale).unwrap_or_default(),
+        affiliate_title: affiliate_field(locale, "title").unwrap_or_default(),
+        affiliate_text: affiliate_field(locale, "text").unwrap_or_default(),
+        affiliate_url: affiliate_field(locale, "url").unwrap_or_default(),
+        affiliate_label: affiliate_field(locale, "label").unwrap_or_default(),
+        affiliate_disclosure: affiliate_field(locale, "disclosure").unwrap_or_default(),
     })
 }
 
@@ -82,6 +87,18 @@ fn first_paragraph(locale: &Value) -> Option<String> {
         .find(|block| block.get("type").and_then(Value::as_str) == Some("paragraph"))?
         .get("props")?
         .get("text")?
+        .as_str()
+        .map(str::to_string)
+}
+
+fn affiliate_field(locale: &Value, field: &str) -> Option<String> {
+    locale
+        .get("blocks")?
+        .as_array()?
+        .iter()
+        .find(|block| block.get("type").and_then(Value::as_str) == Some("affiliate_callout"))?
+        .get("props")?
+        .get(field)?
         .as_str()
         .map(str::to_string)
 }

@@ -149,10 +149,40 @@ fn update(state: &mut StudioState, message: Message) {
         Message::PostFrenchSlugChanged(value) => state.post_editor.fr.slug = value,
         Message::PostFrenchDescriptionChanged(value) => state.post_editor.fr.description = value,
         Message::PostFrenchParagraphChanged(value) => state.post_editor.fr.paragraph = value,
+        Message::PostFrenchAffiliateTitleChanged(value) => {
+            state.post_editor.fr.affiliate_title = value;
+        }
+        Message::PostFrenchAffiliateTextChanged(value) => {
+            state.post_editor.fr.affiliate_text = value;
+        }
+        Message::PostFrenchAffiliateUrlChanged(value) => {
+            state.post_editor.fr.affiliate_url = value;
+        }
+        Message::PostFrenchAffiliateLabelChanged(value) => {
+            state.post_editor.fr.affiliate_label = value;
+        }
+        Message::PostFrenchAffiliateDisclosureChanged(value) => {
+            state.post_editor.fr.affiliate_disclosure = value;
+        }
         Message::PostEnglishTitleChanged(value) => state.post_editor.en.title = value,
         Message::PostEnglishSlugChanged(value) => state.post_editor.en.slug = value,
         Message::PostEnglishDescriptionChanged(value) => state.post_editor.en.description = value,
         Message::PostEnglishParagraphChanged(value) => state.post_editor.en.paragraph = value,
+        Message::PostEnglishAffiliateTitleChanged(value) => {
+            state.post_editor.en.affiliate_title = value;
+        }
+        Message::PostEnglishAffiliateTextChanged(value) => {
+            state.post_editor.en.affiliate_text = value;
+        }
+        Message::PostEnglishAffiliateUrlChanged(value) => {
+            state.post_editor.en.affiliate_url = value;
+        }
+        Message::PostEnglishAffiliateLabelChanged(value) => {
+            state.post_editor.en.affiliate_label = value;
+        }
+        Message::PostEnglishAffiliateDisclosureChanged(value) => {
+            state.post_editor.en.affiliate_disclosure = value;
+        }
         Message::SavePost => match save_post_with_core(&state.project_root, &state.post_editor) {
             Ok(()) => match load_content_entries(&state.project_root) {
                 Ok(entries) => {

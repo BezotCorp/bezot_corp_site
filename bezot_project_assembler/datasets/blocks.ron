@@ -87,6 +87,49 @@
                 bad_uses: ["Créer une grille vide.", "Présenter un article long."],
             ),
         ),
+        "affiliate_callout": (
+            source: Content,
+            component: (module: "blocks/AffiliateCalloutBlock", export: "AffiliateCalloutBlock"),
+            rules: (
+                placement: Anywhere,
+                cardinality: Many,
+                fields: {
+                    "title": (value_type: String, required: true),
+                    "text": (value_type: String, required: false),
+                    "url": (value_type: String, required: true),
+                    "label": (value_type: String, required: true),
+                    "disclosure": (value_type: String, required: true),
+                },
+                output: Element(
+                    tag: "aside",
+                    children: [
+                        Field(name: "disclosure"),
+                        Element(tag: "h2", children: [Field(name: "title")]),
+                        Conditional(
+                            field: "text",
+                            output: Element(tag: "p", children: [Field(name: "text")]),
+                        ),
+                        Element(tag: "a", children: [Field(name: "label")]),
+                    ],
+                ),
+            ),
+            knowledge: (
+                purpose: "Présenter un lien affilié, sponsorisé ou commercial de manière explicite.",
+                usage: "Utiliser ce bloc lorsqu’un article recommande une ressource monétisée et que la relation commerciale doit être visible.",
+                good_examples: [{
+                    "title": "Ressource recommandée",
+                    "text": "Un outil utile pour approfondir le sujet.",
+                    "url": "https://example.com/product",
+                    "label": "Voir l’offre",
+                    "disclosure": "Lien affilié ou sponsorisé.",
+                }],
+                bad_uses: [
+                    "Masquer la relation commerciale.",
+                    "Ajouter un lien publicitaire sans mention visible.",
+                    "Remplacer un paragraphe éditorial par une publicité.",
+                ],
+            ),
+        ),
         "post_list": (
             source: Content,
             component: (module: "blocks/PostListBlock", export: "PostListBlock"),

@@ -28,7 +28,9 @@ fn validate_editor(editor: &PostEditorState) -> io::Result<()> {
     validate_required("Le paragraphe français", &editor.fr.paragraph)?;
     validate_required("Le titre anglais", &editor.en.title)?;
     validate_required("Le slug anglais", &editor.en.slug)?;
-    validate_required("Le paragraphe anglais", &editor.en.paragraph)
+    validate_required("Le paragraphe anglais", &editor.en.paragraph)?;
+    validate_affiliate_fields("français", &editor.fr)?;
+    validate_affiliate_fields("anglais", &editor.en)
 }
 
 fn validate_required(label: &str, value: &str) -> io::Result<()> {
@@ -49,6 +51,42 @@ fn validate_slug_part(label: &str, value: &str) -> io::Result<()> {
     } else {
         Err(invalid_input(format!(
             "{label} doit contenir uniquement des lettres minuscules, des chiffres et des tirets"
+        )))
+    }
+}
+
+fn validate_affiliate_fields(
+    locale_label: &str,
+    editor: &crate::post_locale_editor::PostLocaleEditor,
+) -> io::Result<()> {
+    if editor.affiliate_url.trim().is_empty() {
+        return Ok(());
+    }
+
+    validate_https_url(
+        &format!("L’URL d’affiliation {locale_label}"),
+        &editor.affiliate_url,
+    )?;
+    validate_required(
+        &format!("Le titre d’affiliation {locale_label}"),
+        &editor.affiliate_title,
+    )?;
+    validate_required(
+        &format!("Le libellé d’affiliation {locale_label}"),
+        &editor.affiliate_label,
+    )?;
+    validate_required(
+        &format!("La mention d’affiliation {locale_label}"),
+        &editor.affiliate_disclosure,
+    )
+}
+
+fn validate_https_url(label: &str, value: &str) -> io::Result<()> {
+    if value.starts_with("https://") {
+        Ok(())
+    } else {
+        Err(invalid_input(format!(
+            "{label} doit commencer par https://"
         )))
     }
 }
