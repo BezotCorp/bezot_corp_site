@@ -18,10 +18,7 @@ pub struct ProjectFile {
     pub hash: String,
 }
 
-pub fn scan_project(
-    project_root: &Path,
-    config: &ProjectConfig,
-) -> io::Result<ProjectSnapshot> {
+pub fn scan_project(project_root: &Path, config: &ProjectConfig) -> io::Result<ProjectSnapshot> {
     let canonical_project_root = fs::canonicalize(project_root)?;
     let mut files = Vec::new();
 
@@ -52,8 +49,7 @@ fn collect_files(
     config: &ProjectConfig,
     files: &mut Vec<ProjectFile>,
 ) -> io::Result<()> {
-    let mut entries = fs::read_dir(current_path)?
-        .collect::<Result<Vec<_>, io::Error>>()?;
+    let mut entries = fs::read_dir(current_path)?.collect::<Result<Vec<_>, io::Error>>()?;
 
     entries.sort_by_key(|entry| entry.path());
 

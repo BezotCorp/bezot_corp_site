@@ -1,8 +1,7 @@
-import type { SeoMetadata } from './site';
-import { siteConfig } from './site-config';
+import type { SeoMetadata, SiteMetadata } from './application/site-contract';
 
-function toAbsoluteUrl(path: string) {
-  return new URL(path, siteConfig.siteUrl).toString();
+function toAbsoluteUrl(path: string, site: SiteMetadata) {
+  return new URL(path, site.baseUrl).toString();
 }
 
 function toHrefLang(locale: string) {
@@ -43,11 +42,11 @@ function removeManagedLinks() {
   document.head.querySelectorAll('link[data-managed="true"]').forEach((element) => element.remove());
 }
 
-export function applySeo(seo: SeoMetadata) {
+export function applySeo(seo: SeoMetadata, site: SiteMetadata) {
   const description = seo.description ?? '';
   const ogTitle = seo.ogTitle ?? seo.title;
   const ogDescription = seo.ogDescription ?? description;
-  const imageUrl = seo.ogImage ? toAbsoluteUrl(seo.ogImage) : undefined;
+  const imageUrl = seo.ogImage ? toAbsoluteUrl(seo.ogImage, site) : undefined;
 
   document.title = seo.title;
   document.documentElement.lang = seo.lang;
@@ -71,7 +70,7 @@ export function applySeo(seo: SeoMetadata) {
   removeManagedLinks();
 
   if (seo.canonicalPath) {
-    const canonicalUrl = toAbsoluteUrl(seo.canonicalPath);
+    const canonicalUrl = toAbsoluteUrl(seo.canonicalPath, site);
 
     upsertLink('link[rel="canonical"]', {
       rel: 'canonical',
@@ -86,7 +85,7 @@ export function applySeo(seo: SeoMetadata) {
     const link = document.createElement('link');
     link.setAttribute('rel', 'alternate');
     link.setAttribute('hreflang', toHrefLang(alternate.locale));
-    link.setAttribute('href', toAbsoluteUrl(alternate.path));
+    link.setAttribute('href', toAbsoluteUrl(alternate.path, site));
     link.setAttribute('data-managed', 'true');
     document.head.appendChild(link);
   });
@@ -94,15 +93,15 @@ export function applySeo(seo: SeoMetadata) {
   const xDefault = document.createElement('link');
   xDefault.setAttribute('rel', 'alternate');
   xDefault.setAttribute('hreflang', 'x-default');
-  xDefault.setAttribute('href', toAbsoluteUrl('/'));
+  xDefault.setAttribute('href', toAbsoluteUrl('/', site));
   xDefault.setAttribute('data-managed', 'true');
   document.head.appendChild(xDefault);
 
   const rss = document.createElement('link');
   rss.setAttribute('rel', 'alternate');
   rss.setAttribute('type', 'application/rss+xml');
-  rss.setAttribute('title', `${siteConfig.siteName} RSS`);
-  rss.setAttribute('href', toAbsoluteUrl('/rss.xml'));
+  rss.setAttribute('title', `${site.name} RSS`);
+  rss.setAttribute('href', toAbsoluteUrl('/rss.xml', site));
   rss.setAttribute('data-managed', 'true');
   document.head.appendChild(rss);
 }

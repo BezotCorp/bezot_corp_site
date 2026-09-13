@@ -13,8 +13,22 @@ pub struct BlockDataset {
 
 #[derive(Debug, Deserialize)]
 pub struct BlockDefinition {
+    pub source: BlockSource,
+    pub component: BlockComponent,
     pub rules: BlockRules,
     pub knowledge: BlockKnowledge,
+}
+
+#[derive(Debug, Deserialize, PartialEq, Eq)]
+pub enum BlockSource {
+    Content,
+    Runtime,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BlockComponent {
+    pub module: String,
+    pub export: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -25,14 +39,16 @@ pub struct BlockRules {
     pub output: OutputNode,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq, Eq)]
 pub enum PlacementRule {
     PageStart,
+    Anywhere,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq, Eq)]
 pub enum CardinalityRule {
     AtMostOne,
+    Many,
 }
 
 #[derive(Debug, Deserialize)]
@@ -44,6 +60,9 @@ pub struct FieldRule {
 #[derive(Debug, Deserialize)]
 pub enum FieldValueType {
     String,
+    PositiveInteger,
+    Boolean,
+    CardList,
 }
 
 #[derive(Debug, Deserialize)]
@@ -96,7 +115,9 @@ fn dataset_path() -> PathBuf {
 
 fn validate_dataset(dataset: &BlockDataset) -> io::Result<()> {
     if dataset.version == 0 {
-        return Err(invalid_data("Block dataset version must be greater than zero"));
+        return Err(invalid_data(
+            "Block dataset version must be greater than zero",
+        ));
     }
 
     if dataset.blocks.is_empty() {
@@ -120,11 +141,55 @@ fn validate_dataset(dataset: &BlockDataset) -> io::Result<()> {
             )));
         }
 
+        if definition.knowledge.good_examples.is_empty() {
+            return Err(invalid_data(format!(
+                "Block \"{block_name}\" knowledge must contain at least one good example"
+            )));
+        }
+
+        if definition.knowledge.bad_uses.is_empty() {
+            return Err(invalid_data(format!(
+                "Block \"{block_name}\" knowledge must contain at least one bad use"
+            )));
+        }
+
+        validate_component(block_name, &definition.component)?;
+
         validate_output_node(
             block_name,
             &definition.rules.fields,
             &definition.rules.output,
         )?;
+    }
+
+    Ok(())
+}
+
+fn validate_component(block_name: &str, component: &BlockComponent) -> io::Result<()> {
+    if component.module.is_empty()
+        || component.module.starts_with('/')
+        || component
+            .module
+            .split('/')
+            .any(|segment| segment.is_empty() || segment == "..")
+    {
+        return Err(invalid_data(format!(
+            "Block \"{block_name}\" has an invalid component module \"{}\"",
+            component.module
+        )));
+    }
+
+    let mut characters = component.export.chars();
+    let valid_export = characters
+        .next()
+        .is_some_and(|character| character == '_' || character.is_ascii_alphabetic())
+        && characters.all(|character| character == '_' || character.is_ascii_alphanumeric());
+
+    if !valid_export {
+        return Err(invalid_data(format!(
+            "Block \"{block_name}\" has an invalid component export \"{}\"",
+            component.export
+        )));
     }
 
     Ok(())
@@ -157,7 +222,13 @@ fn validate_output_node(
             validate_output_node(block_name, fields, output)?;
         }
 
-        OutputNode::Text { .. } => {}
+        OutputNode::Text { value } => {
+            if value.trim().is_empty() {
+                return Err(invalid_data(format!(
+                    "Block \"{block_name}\" contains an empty output text"
+                )));
+            }
+        }
     }
 
     Ok(())

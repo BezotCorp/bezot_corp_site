@@ -1,20 +1,20 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import type { Locale } from "../i18n/locales";
+import { useSite } from "../application/use-site";
 import { MainLayout } from "../layout/MainLayout";
-import { getNotFoundSeo } from "../site";
 import { applySeo } from "../seo";
 
 type Props = {
-  locale: Locale;
+  locale: string;
 };
 
 export function NotFoundPage({ locale }: Props) {
+  const site = useSite();
   const isFrench = locale === "fr-fr";
 
   useEffect(() => {
-    applySeo(getNotFoundSeo(locale));
-  }, [locale]);
+    applySeo(site.getNotFoundSeo(locale), site.metadata);
+  }, [locale, site]);
 
   return (
     <MainLayout>

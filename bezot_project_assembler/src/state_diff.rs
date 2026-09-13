@@ -19,10 +19,7 @@ impl StateDiff {
     }
 }
 
-pub fn diff_states(
-    old_state: Option<&AssemblerState>,
-    new_state: &AssemblerState,
-) -> StateDiff {
+pub fn diff_states(old_state: Option<&AssemblerState>, new_state: &AssemblerState) -> StateDiff {
     let Some(old_state) = old_state else {
         return StateDiff {
             added_inputs: new_state.inputs.clone(),

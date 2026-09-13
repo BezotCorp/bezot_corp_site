@@ -1,61 +1,133 @@
 (
     version: 1,
-
     blocks: {
         "hero": (
+            source: Content,
+            component: (module: "blocks/HeroBlock", export: "HeroBlock"),
             rules: (
                 placement: PageStart,
                 cardinality: AtMostOne,
-
                 fields: {
-                    "title": (
-                        value_type: String,
-                        required: true,
-                    ),
-                    "subtitle": (
-                        value_type: String,
-                        required: false,
-                    ),
+                    "title": (value_type: String, required: true),
+                    "subtitle": (value_type: String, required: false),
                 },
-
                 output: Element(
                     tag: "section",
                     children: [
-                        Element(
-                            tag: "h1",
-                            children: [
-                                Field(name: "title"),
-                            ],
-                        ),
+                        Element(tag: "h1", children: [Field(name: "title")]),
                         Conditional(
                             field: "subtitle",
-                            output: Element(
-                                tag: "p",
-                                children: [
-                                    Field(name: "subtitle"),
-                                ],
-                            ),
+                            output: Element(tag: "p", children: [Field(name: "subtitle")]),
                         ),
                     ],
                 ),
             ),
-
             knowledge: (
                 purpose: "Présenter le sujet principal d’une page.",
                 usage: "Utiliser ce bloc au début d’une page lorsqu’un titre principal et éventuellement une courte introduction sont nécessaires.",
-
-                good_examples: [
-                    {
-                        "title": "Mentions légales",
-                        "subtitle": "Informations relatives au site bezotcorp.com.",
-                    },
-                ],
-
+                good_examples: [{
+                    "title": "Mentions légales",
+                    "subtitle": "Informations relatives au site bezotcorp.com.",
+                }],
                 bad_uses: [
                     "Introduire une section secondaire.",
                     "Répéter un titre principal déjà présent.",
                     "Afficher les métadonnées d’un article.",
                 ],
+            ),
+        ),
+        "paragraph": (
+            source: Content,
+            component: (module: "blocks/ParagraphBlock", export: "ParagraphBlock"),
+            rules: (
+                placement: Anywhere,
+                cardinality: Many,
+                fields: {"text": (value_type: String, required: true)},
+                output: Element(tag: "p", children: [Field(name: "text")]),
+            ),
+            knowledge: (
+                purpose: "Afficher un paragraphe de contenu éditorial.",
+                usage: "Utiliser un bloc par paragraphe afin de conserver un contenu structuré.",
+                good_examples: [{"text": "Un paragraphe clair et autonome."}],
+                bad_uses: ["Stocker une liste de cartes.", "Remplacer le titre principal."],
+            ),
+        ),
+        "mail_link": (
+            source: Content,
+            component: (module: "blocks/MailLinkBlock", export: "MailLinkBlock"),
+            rules: (
+                placement: Anywhere,
+                cardinality: Many,
+                fields: {
+                    "email": (value_type: String, required: true),
+                    "label": (value_type: String, required: false),
+                },
+                output: Element(tag: "a", children: [Field(name: "label")]),
+            ),
+            knowledge: (
+                purpose: "Présenter une adresse de contact sous forme de lien électronique.",
+                usage: "Utiliser ce bloc lorsqu’une page doit proposer un contact direct par courriel.",
+                good_examples: [{"email": "contact@example.com", "label": "Nous écrire"}],
+                bad_uses: ["Présenter un lien HTTP.", "Afficher une adresse non fonctionnelle."],
+            ),
+        ),
+        "card_grid": (
+            source: Content,
+            component: (module: "blocks/CardGridBlock", export: "CardGridBlock"),
+            rules: (
+                placement: Anywhere,
+                cardinality: Many,
+                fields: {"items": (value_type: CardList, required: true)},
+                output: Element(tag: "section", children: [Field(name: "items")]),
+            ),
+            knowledge: (
+                purpose: "Présenter plusieurs éléments comparables sous forme de cartes.",
+                usage: "Utiliser items avec un titre et un texte non vides pour chaque carte.",
+                good_examples: [{"items": "[{ title, text }]"}],
+                bad_uses: ["Créer une grille vide.", "Présenter un article long."],
+            ),
+        ),
+        "post_list": (
+            source: Content,
+            component: (module: "blocks/PostListBlock", export: "PostListBlock"),
+            rules: (
+                placement: Anywhere,
+                cardinality: AtMostOne,
+                fields: {
+                    "limit": (value_type: PositiveInteger, required: false),
+                    "page": (value_type: PositiveInteger, required: false),
+                    "showDescription": (value_type: Boolean, required: false),
+                    "showAuthor": (value_type: Boolean, required: false),
+                    "showDate": (value_type: Boolean, required: false),
+                },
+                output: Element(tag: "section", children: []),
+            ),
+            knowledge: (
+                purpose: "Afficher la liste paginée des articles publiés.",
+                usage: "Utiliser ce bloc sur la page d’entrée du blog.",
+                good_examples: [{"limit": "10", "showDescription": "true"}],
+                bad_uses: ["Insérer plusieurs listes identiques sur une page.", "Utiliser une limite nulle."],
+            ),
+        ),
+        "post_meta": (
+            source: Runtime,
+            component: (module: "blocks/PostMetaBlock", export: "PostMetaBlock"),
+            rules: (
+                placement: Anywhere,
+                cardinality: AtMostOne,
+                fields: {
+                    "author": (value_type: String, required: false),
+                    "publishedAt": (value_type: String, required: false),
+                    "updatedAt": (value_type: String, required: false),
+                    "locale": (value_type: String, required: false),
+                },
+                output: Element(tag: "p", children: []),
+            ),
+            knowledge: (
+                purpose: "Afficher les métadonnées calculées d’un article.",
+                usage: "Ce bloc est injecté par le runtime et ne doit pas être déclaré dans les contenus JSON.",
+                good_examples: [{"author": "Bezot Corp AI", "publishedAt": "2026-05-17"}],
+                bad_uses: ["Déclarer manuellement ce bloc dans une page JSON."],
             ),
         ),
     },
