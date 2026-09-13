@@ -8,6 +8,7 @@ mod post_locale_editor;
 mod post_reader;
 mod post_writer;
 mod project_paths;
+mod studio_core_runner;
 mod studio_state;
 mod studio_view;
 

@@ -1,31 +1,22 @@
 use std::io;
 use std::path::Path;
-use std::process::Command;
 
 use common::invalid_data;
 
 use crate::content_entry::ContentEntry;
-use crate::project_paths::studio_core_manifest_path;
+use crate::studio_core_runner::{run_studio_core, studio_core_failure};
 
 pub(crate) fn load_content_entries(project_root: &Path) -> io::Result<Vec<ContentEntry>> {
-    let output = Command::new("cargo")
-        .args([
-            "run",
-            "--manifest-path",
-            &studio_core_manifest_path().to_string_lossy(),
-            "--",
-            &project_root.to_string_lossy(),
-            "content",
-            "list",
-            "--format",
-            "json",
-        ])
-        .output()?;
+    let output = run_studio_core(&[
+        project_root.as_os_str().to_owned(),
+        "content".into(),
+        "list".into(),
+        "--format".into(),
+        "json".into(),
+    ])?;
 
     if !output.status.success() {
-        return Err(io::Error::other(
-            String::from_utf8_lossy(&output.stderr).to_string(),
-        ));
+        return Err(studio_core_failure(&output));
     }
 
     serde_json::from_slice(&output.stdout).map_err(invalid_data)

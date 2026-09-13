@@ -1,31 +1,22 @@
 use std::io;
 use std::path::Path;
-use std::process::Command;
 
 use common::invalid_data;
 
 use crate::post_editor_state::PostEditorState;
-use crate::project_paths::studio_core_manifest_path;
+use crate::studio_core_runner::{run_studio_core, studio_core_failure};
 
 pub(crate) fn load_post_editor(project_root: &Path, post_id: &str) -> io::Result<PostEditorState> {
-    let output = Command::new("cargo")
-        .args([
-            "run",
-            "--manifest-path",
-            &studio_core_manifest_path().to_string_lossy(),
-            "--",
-            &project_root.to_string_lossy(),
-            "content",
-            "post",
-            "get",
-            post_id,
-        ])
-        .output()?;
+    let output = run_studio_core(&[
+        project_root.as_os_str().to_owned(),
+        "content".into(),
+        "post".into(),
+        "get".into(),
+        post_id.into(),
+    ])?;
 
     if !output.status.success() {
-        return Err(io::Error::other(
-            String::from_utf8_lossy(&output.stderr).to_string(),
-        ));
+        return Err(studio_core_failure(&output));
     }
 
     serde_json::from_slice(&output.stdout).map_err(invalid_data)
