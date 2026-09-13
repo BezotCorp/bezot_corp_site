@@ -1,22 +1,27 @@
 mod assembler_state;
 mod assembly;
+mod asserts;
 mod block_definition;
 mod content_reader;
 mod content_validator;
 mod file_hash;
+mod input_file;
+mod input_role;
+mod output_file;
 mod prebuild_writer;
 mod project_config;
 mod project_execution;
-mod project_scan;
+mod project_file;
 mod site_generator;
 mod state_diff;
 mod state_store;
+mod string_operations;
+mod project_snapshot;
 
-use std::path::PathBuf;
-use std::{env, fmt, io, process};
+use common::CommandMode;
+use std::{env, fmt, io, path::PathBuf, process};
 
-use assembly::assemble_project;
-use project_execution::{CommandMode, execute};
+use project_execution::execute;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -35,7 +40,7 @@ fn main() {
         Err(error) => exit_with_error(error),
     };
 
-    let report = match assemble_project(&project_root) {
+    let report = match assembly::AssemblyReport::assemble_project(&project_root) {
         Ok(report) => report,
         Err(error) => exit_with_error(error),
     };

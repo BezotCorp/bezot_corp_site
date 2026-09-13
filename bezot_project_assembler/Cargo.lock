@@ -7,6 +7,7 @@ name = "bezot_project_assembler"
 version = "0.1.0"
 dependencies = [
  "bincode-next",
+ "common",
  "ron",
  "serde",
  "serde_json",
@@ -42,6 +43,10 @@ checksum = "b588b76d00fde79687d7646a9b5bdf3cc0f655e0bbd080335a95d7e96f3587da"
 dependencies = [
  "serde_core",
 ]
+
+[[package]]
+name = "common"
+version = "0.0.1"
 
 [[package]]
 name = "itoa"

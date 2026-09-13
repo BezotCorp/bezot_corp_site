@@ -5,6 +5,9 @@ use std::path::PathBuf;
 
 use serde::Deserialize;
 
+use crate::asserts::assert_known_field;
+use crate::content_validator::invalid_data_message;
+
 #[derive(Debug, Deserialize)]
 pub struct BlockDataset {
     pub version: u32,
@@ -115,40 +118,42 @@ fn dataset_path() -> PathBuf {
 
 fn validate_dataset(dataset: &BlockDataset) -> io::Result<()> {
     if dataset.version == 0 {
-        return Err(invalid_data(
+        return Err(invalid_data_message(
             "Block dataset version must be greater than zero",
         ));
     }
 
     if dataset.blocks.is_empty() {
-        return Err(invalid_data("Block dataset must define at least one block"));
+        return Err(invalid_data_message(
+            "Block dataset must define at least one block",
+        ));
     }
 
     for (block_name, definition) in &dataset.blocks {
         if block_name.is_empty() {
-            return Err(invalid_data("Block name must not be empty"));
+            return Err(invalid_data_message("Block name must not be empty"));
         }
 
         if definition.knowledge.purpose.trim().is_empty() {
-            return Err(invalid_data(format!(
+            return Err(invalid_data_message(format!(
                 "Block \"{block_name}\" knowledge purpose must not be empty"
             )));
         }
 
         if definition.knowledge.usage.trim().is_empty() {
-            return Err(invalid_data(format!(
+            return Err(invalid_data_message(format!(
                 "Block \"{block_name}\" knowledge usage must not be empty"
             )));
         }
 
         if definition.knowledge.good_examples.is_empty() {
-            return Err(invalid_data(format!(
+            return Err(invalid_data_message(format!(
                 "Block \"{block_name}\" knowledge must contain at least one good example"
             )));
         }
 
         if definition.knowledge.bad_uses.is_empty() {
-            return Err(invalid_data(format!(
+            return Err(invalid_data_message(format!(
                 "Block \"{block_name}\" knowledge must contain at least one bad use"
             )));
         }
@@ -173,7 +178,7 @@ fn validate_component(block_name: &str, component: &BlockComponent) -> io::Resul
             .split('/')
             .any(|segment| segment.is_empty() || segment == "..")
     {
-        return Err(invalid_data(format!(
+        return Err(invalid_data_message(format!(
             "Block \"{block_name}\" has an invalid component module \"{}\"",
             component.module
         )));
@@ -186,7 +191,7 @@ fn validate_component(block_name: &str, component: &BlockComponent) -> io::Resul
         && characters.all(|character| character == '_' || character.is_ascii_alphanumeric());
 
     if !valid_export {
-        return Err(invalid_data(format!(
+        return Err(invalid_data_message(format!(
             "Block \"{block_name}\" has an invalid component export \"{}\"",
             component.export
         )));
@@ -203,7 +208,7 @@ fn validate_output_node(
     match node {
         OutputNode::Element { tag, children } => {
             if tag.trim().is_empty() {
-                return Err(invalid_data(format!(
+                return Err(invalid_data_message(format!(
                     "Block \"{block_name}\" contains an element with an empty tag"
                 )));
             }
@@ -224,7 +229,7 @@ fn validate_output_node(
 
         OutputNode::Text { value } => {
             if value.trim().is_empty() {
-                return Err(invalid_data(format!(
+                return Err(invalid_data_message(format!(
                     "Block \"{block_name}\" contains an empty output text"
                 )));
             }
@@ -232,22 +237,4 @@ fn validate_output_node(
     }
 
     Ok(())
-}
-
-fn assert_known_field(
-    block_name: &str,
-    fields: &BTreeMap<String, FieldRule>,
-    field_name: &str,
-) -> io::Result<()> {
-    if !fields.contains_key(field_name) {
-        return Err(invalid_data(format!(
-            "Block \"{block_name}\" output references unknown field \"{field_name}\""
-        )));
-    }
-
-    Ok(())
-}
-
-fn invalid_data(message: impl Into<String>) -> io::Error {
-    io::Error::new(io::ErrorKind::InvalidData, message.into())
 }
