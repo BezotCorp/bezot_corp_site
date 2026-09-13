@@ -3,11 +3,13 @@ mod command_mode;
 mod content_entry;
 mod content_list_command;
 mod content_reader;
-mod errors;
 mod localized_content_summary;
 mod output_format;
 mod process_runner;
 mod project_paths;
+
+#[cfg(test)]
+mod tests;
 
 use std::env;
 use std::io;
@@ -15,8 +17,8 @@ use std::process::ExitCode;
 
 use assembler_runner::run_assembler;
 use command_mode::CommandMode;
+use common::invalid_input;
 use content_list_command::run_content_command;
-use errors::invalid_input;
 use project_paths::resolve_project_root;
 
 fn main() -> ExitCode {

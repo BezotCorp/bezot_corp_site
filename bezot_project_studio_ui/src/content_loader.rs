@@ -5,7 +5,7 @@ use std::process::Command;
 use crate::content_entry::ContentEntry;
 use crate::project_paths::studio_core_manifest_path;
 
-pub fn load_content_entries(project_root: &Path) -> io::Result<Vec<ContentEntry>> {
+pub(crate) fn load_content_entries(project_root: &Path) -> io::Result<Vec<ContentEntry>> {
     let output = Command::new("cargo")
         .args([
             "run",

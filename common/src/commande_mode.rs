@@ -15,15 +15,4 @@ impl CommandMode {
             None => Err("missing command; expected dev or production".to_string()),
         }
     }
-
-    pub fn assembler_command(self) -> &'static str {
-        match self {
-            Self::Dev => "dev",
-            Self::Production => "production",
-        }
-    }
-
-    pub fn use_release_assembler(self) -> bool {
-        matches!(self, Self::Production)
-    }
 }

@@ -1,6 +1,4 @@
-use std::ffi::OsString;
-use std::io;
-use std::process::Command;
+use std::{ffi::OsString, io, process::Command};
 
 pub fn run_command(program: &str, args: Vec<String>) -> io::Result<()> {
     let status = Command::new(program)

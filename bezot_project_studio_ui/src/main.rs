@@ -6,11 +6,12 @@ mod project_paths;
 mod studio_state;
 mod studio_view;
 
-use std::env;
-use std::io;
-use std::path::PathBuf;
+#[cfg(test)]
+mod tests;
 
-use iced::{Result, Theme, application};
+use std::{env, io, path::PathBuf};
+
+use iced::{application, Result, Theme};
 
 use content_loader::load_content_entries;
 use message::Message;
@@ -36,14 +37,8 @@ fn main() -> Result {
 
 fn boot_state() -> io::Result<StudioState> {
     let args = env::args().collect::<Vec<_>>();
-
-    if args.len() != 2 {
-        return Err(invalid_input(
-            "usage: bezot_project_studio_ui <project-root>",
-        ));
-    }
-
-    let project_root = resolve_project_root(&args[1])?;
+    let project_root_argument = project_root_argument(&args)?;
+    let project_root = resolve_project_root(project_root_argument)?;
     let entries = load_content_entries(&project_root)?;
 
     Ok(StudioState {
@@ -51,6 +46,16 @@ fn boot_state() -> io::Result<StudioState> {
         entries,
         error: None,
     })
+}
+
+fn project_root_argument(args: &[String]) -> io::Result<&str> {
+    match args {
+        [_program] => Ok("site"),
+        [_program, project_root] => Ok(project_root),
+        _ => Err(invalid_input(
+            "usage: bezot_project_studio_ui [project-root]",
+        )),
+    }
 }
 
 fn update(_state: &mut StudioState, message: Message) {

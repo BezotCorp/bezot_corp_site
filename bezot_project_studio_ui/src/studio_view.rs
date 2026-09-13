@@ -5,7 +5,7 @@ use crate::content_entry::ContentEntry;
 use crate::message::Message;
 use crate::studio_state::StudioState;
 
-pub fn view(state: &StudioState) -> Element<'_, Message> {
+pub(crate) fn view(state: &StudioState) -> Element<'_, Message> {
     let mut content = column![
         text("Bezot Project Studio").size(32),
         text(state.project_root.display().to_string()).size(14),
@@ -29,14 +29,12 @@ pub fn view(state: &StudioState) -> Element<'_, Message> {
 }
 
 fn entry_view(entry: &ContentEntry) -> Element<'_, Message> {
-    let mut block = column![
-        row![
-            text(entry.kind.to_uppercase()).size(14),
-            text(&entry.id).size(22),
-            text(format!("[{}]", entry.status)).size(14),
-        ]
-        .spacing(12)
+    let mut block = column![row![
+        text(entry.kind.to_uppercase()).size(14),
+        text(&entry.id).size(22),
+        text(format!("[{}]", entry.status)).size(14),
     ]
+    .spacing(12)]
     .spacing(6);
 
     for locale in &entry.locales {

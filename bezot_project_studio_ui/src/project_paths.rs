@@ -1,8 +1,6 @@
-use std::env;
-use std::io;
-use std::path::PathBuf;
+use std::{env, io, path::PathBuf};
 
-pub fn resolve_project_root(input: &str) -> io::Result<PathBuf> {
+pub(crate) fn resolve_project_root(input: &str) -> io::Result<PathBuf> {
     let given = PathBuf::from(input);
     if given.exists() {
         return Ok(given);
@@ -21,7 +19,7 @@ pub fn resolve_project_root(input: &str) -> io::Result<PathBuf> {
     ))
 }
 
-pub fn studio_core_manifest_path() -> PathBuf {
+pub(crate) fn studio_core_manifest_path() -> PathBuf {
     repository_root().join("bezot_project_studio_core/Cargo.toml")
 }
 

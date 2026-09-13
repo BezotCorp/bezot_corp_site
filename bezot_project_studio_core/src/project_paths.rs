@@ -1,6 +1,4 @@
-use std::env;
-use std::io;
-use std::path::PathBuf;
+use std::{env, io, path::PathBuf};
 
 pub fn resolve_project_root(input: &str) -> io::Result<PathBuf> {
     let given = PathBuf::from(input);

@@ -1,5 +1,4 @@
-use std::io;
-use std::path::Path;
+use std::{io, path::Path};
 
 use crate::command_mode::CommandMode;
 use crate::process_runner::run_command;
