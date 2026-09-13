@@ -1,24 +1,18 @@
 import { Link, useLocation } from "react-router-dom";
-import { defaultLocale, isLocale, type Locale } from "../i18n/locales";
-import { getPagePath } from "../site";
-
-function getActiveLocale(pathname: string): Locale {
-  const firstSegment = pathname.split("/").filter(Boolean)[0];
-
-  return isLocale(firstSegment) ? firstSegment : defaultLocale;
-}
+import { useSite } from "../application/use-site";
 
 export function Footer() {
+  const site = useSite();
   const location = useLocation();
-  const locale = getActiveLocale(location.pathname);
+  const locale = site.getActiveLocale(location.pathname);
   const isFrench = locale === "fr-fr";
 
-  const privacyPath = getPagePath("privacy", locale);
-  const legalNoticePath = getPagePath("legal-notice", locale);
+  const privacyPath = site.getPagePath("privacy", locale);
+  const legalNoticePath = site.getPagePath("legal-notice", locale);
 
   return (
     <footer className="site-footer">
-      <p>© {new Date().getFullYear()} Bezot Corp. {isFrench ? "Tous droits réservés." : "All rights reserved."}</p>
+      <p>© {new Date().getFullYear()} {site.metadata.name}. {isFrench ? "Tous droits réservés." : "All rights reserved."}</p>
 
       <nav aria-label={isFrench ? "Liens légaux" : "Legal links"}>
         {privacyPath && (

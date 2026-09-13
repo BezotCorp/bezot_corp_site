@@ -2,7 +2,9 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
+use crate::file_hash;
 use crate::project_scan::ProjectSnapshot;
+use crate::site_generator::{GENERATED_SOURCE_PREFIX, GeneratedFile};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct AssemblerState {
@@ -35,7 +37,7 @@ pub struct OutputFile {
 }
 
 impl AssemblerState {
-    pub fn from_snapshot(snapshot: &ProjectSnapshot) -> Self {
+    pub fn from_snapshot(snapshot: &ProjectSnapshot, generated_files: &[GeneratedFile]) -> Self {
         let inputs: Vec<InputFile> = snapshot
             .files
             .iter()
@@ -47,13 +49,17 @@ impl AssemblerState {
             })
             .collect();
 
-        let outputs = inputs
-            .iter()
-            .filter_map(output_from_input)
-            .collect();
+        let mut outputs: Vec<OutputFile> = inputs.iter().filter_map(output_from_input).collect();
+
+        outputs.extend(generated_files.iter().map(|file| OutputFile {
+            path: format!("prebuild/{}", file.relative_path),
+            source_path: format!("{GENERATED_SOURCE_PREFIX}{}", file.relative_path),
+            source_hash: file_hash::hex_u64(file_hash::fnv1a_64(&file.bytes)),
+        }));
+        outputs.sort_by(|left, right| left.path.cmp(&right.path));
 
         Self {
-            version: 1,
+            version: 2,
             project_root: snapshot.project_root.clone(),
             inputs,
             outputs,
@@ -64,7 +70,10 @@ impl AssemblerState {
 fn role_from_path(path: &str) -> InputRole {
     if path.starts_with("content/") {
         InputRole::Content
-    } else if path.starts_with("src/") {
+    } else if path.starts_with("scripts/")
+        || path.starts_with("public/")
+        || path.starts_with("src/")
+    {
         InputRole::SourceCode
     } else {
         InputRole::Unknown
@@ -73,11 +82,11 @@ fn role_from_path(path: &str) -> InputRole {
 
 fn output_from_input(input: &InputFile) -> Option<OutputFile> {
     match input.role {
-        InputRole::SourceCode => Some(OutputFile {
+        InputRole::Content | InputRole::SourceCode => Some(OutputFile {
             path: format!("prebuild/{}", input.path),
             source_path: input.path.clone(),
             source_hash: input.hash.clone(),
         }),
-        InputRole::Content | InputRole::Unknown => None,
+        InputRole::Unknown => None,
     }
 }

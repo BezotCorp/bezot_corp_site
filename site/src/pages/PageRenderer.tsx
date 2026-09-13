@@ -1,26 +1,34 @@
 import { Link, useLocation } from 'react-router-dom';
-import { isPostEntry, resolveRoute } from '../site';
+import { useSite } from '../application/use-site';
 import { NotFoundPage } from './NotFoundPage';
 import { PageTemplate } from '../templates/PageTemplate';
 
 function RootLanguagePage() {
+  const site = useSite();
+
   return (
     <main>
-      <h1>Bezot Corp</h1>
+      <h1>{site.metadata.name}</h1>
       <p>Choose your language.</p>
 
       <nav aria-label="Language selection">
-        <Link to="/fr-fr/">Français</Link>
-        {' | '}
-        <Link to="/en-us/">English</Link>
+        {site.metadata.locales.map((locale, index) => (
+          <span key={locale}>
+            {index > 0 ? ' | ' : null}
+            <Link to={`/${locale}/`}>
+              {locale === 'fr-fr' ? 'Français' : locale === 'en-us' ? 'English' : locale}
+            </Link>
+          </span>
+        ))}
       </nav>
     </main>
   );
 }
 
 export function PageRenderer() {
+  const site = useSite();
   const location = useLocation();
-  const match = resolveRoute(location.pathname);
+  const match = site.resolveRoute(location.pathname);
 
   if (match.kind === 'root') {
     return <RootLanguagePage />;
@@ -30,7 +38,7 @@ export function PageRenderer() {
     return <NotFoundPage locale={match.locale} />;
   }
 
-  const blocks = isPostEntry(match.entry)
+  const blocks = site.isPostEntry(match.entry)
     ? [
         match.content.blocks[0],
         {

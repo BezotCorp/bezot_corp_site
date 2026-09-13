@@ -1,38 +1,17 @@
-import { CardGridBlock } from './CardGridBlock';
-import { HeroBlock } from './HeroBlock';
-import { MailLinkBlock } from './MailLinkBlock';
-import { ParagraphBlock } from './ParagraphBlock';
-import { PostListBlock } from './PostListBlock';
-import { PostMetaBlock } from './PostMetaBlock';
+import type { ContentBlock } from '../application/site-contract';
+import { useSite } from '../application/use-site';
 
 type Props = {
-  block: {
-    type: string;
-    props?: Record<string, unknown>;
-  };
+  block: ContentBlock;
 };
 
 export function BlockRenderer({ block }: Props) {
-  switch (block.type) {
-    case 'hero':
-      return <HeroBlock props={block.props} />;
+  const site = useSite();
+  const Component = site.blocks[block.type];
 
-    case 'paragraph':
-      return <ParagraphBlock props={block.props} />;
-
-    case 'mail_link':
-      return <MailLinkBlock props={block.props} />;
-
-    case 'card_grid':
-      return <CardGridBlock props={block.props} />;
-
-    case 'post_list':
-      return <PostListBlock props={block.props} />;
-
-    case 'post_meta':
-      return <PostMetaBlock props={block.props} />;
-
-    default:
-      return null;
+  if (!Component) {
+    throw new Error(`Block type "${block.type}" is not registered`);
   }
+
+  return <Component props={block.props} />;
 }

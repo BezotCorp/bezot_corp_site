@@ -1,6 +1,7 @@
-use std::fs;
-use std::io;
-use std::path::{Path, PathBuf};
+use std::{
+    fs, io,
+    path::{Path, PathBuf},
+};
 
 use bincode_next::config;
 use ron::ser::PrettyConfig;

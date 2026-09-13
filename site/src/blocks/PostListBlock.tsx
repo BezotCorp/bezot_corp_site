@@ -1,16 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
-import { defaultLocale, isLocale, type Locale } from '../i18n/locales';
-import { getPathForLocaleAndSlug, getPublishedPosts } from '../site';
+import { useSite } from '../application/use-site';
 
 type Props = {
-  props?: Record<string, unknown>;
+  props?: Readonly<Record<string, unknown>>;
 };
-
-function getActiveLocale(pathname: string): Locale {
-  const firstSegment = pathname.split('/').filter(Boolean)[0];
-
-  return isLocale(firstSegment) ? firstSegment : defaultLocale;
-}
 
 function getNumber(value: unknown, fallback: number) {
   return typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : fallback;
@@ -20,7 +13,7 @@ function getBoolean(value: unknown, fallback: boolean) {
   return typeof value === 'boolean' ? value : fallback;
 }
 
-function formatDate(value: string, locale: Locale) {
+function formatDate(value: string, locale: string) {
   return new Intl.DateTimeFormat(locale, {
     year: 'numeric',
     month: 'long',
@@ -29,8 +22,9 @@ function formatDate(value: string, locale: Locale) {
 }
 
 export function PostListBlock({ props }: Props) {
+  const site = useSite();
   const location = useLocation();
-  const locale = getActiveLocale(location.pathname);
+  const locale = site.getActiveLocale(location.pathname);
 
   const limit = getNumber(props?.limit, 10);
   const page = getNumber(props?.page, 1);
@@ -38,7 +32,7 @@ export function PostListBlock({ props }: Props) {
   const showAuthor = getBoolean(props?.showAuthor, true);
   const showDate = getBoolean(props?.showDate, true);
 
-  const posts = getPublishedPosts()
+  const posts = site.getPublishedPosts()
     .filter((post) => post.locales[locale])
     .slice()
     .sort((a, b) => String(b.publishedAt ?? '').localeCompare(String(a.publishedAt ?? '')));
@@ -59,7 +53,7 @@ export function PostListBlock({ props }: Props) {
     <section aria-label={locale === 'fr-fr' ? 'Articles' : 'Posts'}>
       {visiblePosts.map((post) => {
         const content = post.locales[locale];
-        const path = getPathForLocaleAndSlug(locale, content.slug);
+        const path = site.getPathForLocaleAndSlug(locale, content.slug);
         const title = content.seo.ogTitle;
         const description = content.seo.description;
 

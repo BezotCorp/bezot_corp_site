@@ -11,6 +11,8 @@ impl ProjectConfig {
         Self {
             input_roots: vec![
                 PathBuf::from("content"),
+                PathBuf::from("public"),
+                PathBuf::from("scripts"),
                 PathBuf::from("src"),
             ],
             ignored_paths: vec![
@@ -18,7 +20,6 @@ impl ProjectConfig {
                 "node_modules/".to_string(),
                 "dist/".to_string(),
                 "prebuild/".to_string(),
-                "src/generated/".to_string(),
                 "target/".to_string(),
             ],
         }

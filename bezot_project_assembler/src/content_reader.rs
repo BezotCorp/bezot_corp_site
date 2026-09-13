@@ -57,7 +57,11 @@ fn read_pages(
         .ok_or_else(|| invalid_data("pages index has no parent directory"))?;
 
     let pages_index = read_json(&pages_index_path)?;
-    let page_ids = array_field(&pages_index, &["pageIds"], "content/pages/index.json pageIds")?;
+    let page_ids = array_field(
+        &pages_index,
+        &["pageIds"],
+        "content/pages/index.json pageIds",
+    )?;
 
     assert_unique_strings(page_ids, "content/pages/index.json pageIds")?;
 
@@ -95,7 +99,9 @@ fn read_pages(
 
         for (locale, locale_index_value) in locales_index {
             let locale_index = locale_index_value.as_object().ok_or_else(|| {
-                invalid_data(format!("page \"{page_id}\" locale \"{locale}\" must be an object"))
+                invalid_data(format!(
+                    "page \"{page_id}\" locale \"{locale}\" must be an object"
+                ))
             })?;
 
             assert_status(
@@ -123,7 +129,9 @@ fn read_pages(
             }
 
             let locale_content_object = locale_content.as_object().ok_or_else(|| {
-                invalid_data(format!("page \"{page_id}\" locale \"{locale}\" content must be an object"))
+                invalid_data(format!(
+                    "page \"{page_id}\" locale \"{locale}\" content must be an object"
+                ))
             })?;
 
             for (key, value) in locale_content_object {
@@ -173,7 +181,11 @@ fn read_blog_posts(
         return Ok(Vec::new());
     }
 
-    let entry_page_id = string_at(&blog_index, &["entryPageId"], "content/blog/index.json entryPageId")?;
+    let entry_page_id = string_at(
+        &blog_index,
+        &["entryPageId"],
+        "content/blog/index.json entryPageId",
+    )?;
     let section_entry_page_id = string_field(blog_section, "entryPageId")?;
 
     if entry_page_id != section_entry_page_id {
@@ -204,10 +216,7 @@ fn read_blog_posts(
 
         let post = read_json(&post_file_path)?;
 
-        assert_non_empty_string(
-            post.get("id"),
-            &format!("blog post \"{post_path}\" id"),
-        )?;
+        assert_non_empty_string(post.get("id"), &format!("blog post \"{post_path}\" id"))?;
 
         let post_id = post.get("id").and_then(Value::as_str).unwrap_or(post_path);
 
@@ -235,7 +244,10 @@ fn read_blog_posts(
 
 fn validate_section(section: &Map<String, Value>, label: &str) -> io::Result<()> {
     assert_status(section.get("status"), &["enabled", "disabled"], label)?;
-    assert_safe_relative_path(string_field(section, "indexPath")?, &format!("{label}.indexPath"))?;
+    assert_safe_relative_path(
+        string_field(section, "indexPath")?,
+        &format!("{label}.indexPath"),
+    )?;
 
     if label == "sections.pages" {
         assert_non_empty_string(section.get("homePageId"), "sections.pages.homePageId")?;
@@ -263,10 +275,7 @@ fn assert_file(path: &Path) -> io::Result<()> {
     Ok(())
 }
 
-fn get_required_object<'a>(
-    value: &'a Value,
-    path: &[&str],
-) -> io::Result<&'a Map<String, Value>> {
+fn get_required_object<'a>(value: &'a Value, path: &[&str]) -> io::Result<&'a Map<String, Value>> {
     let mut current = value;
 
     for key in path {
@@ -367,9 +376,7 @@ fn assert_unique_strings(values: &[Value], label: &str) -> io::Result<()> {
 }
 
 fn assert_array_contains_string(values: &[Value], expected: &str, label: &str) -> io::Result<()> {
-    let contains = values
-        .iter()
-        .any(|value| value.as_str() == Some(expected));
+    let contains = values.iter().any(|value| value.as_str() == Some(expected));
 
     if !contains {
         return Err(invalid_data(format!(
@@ -413,7 +420,9 @@ fn assert_no_locale_index_fields(
     locale_content: &Value,
 ) -> io::Result<()> {
     let object = locale_content.as_object().ok_or_else(|| {
-        invalid_data(format!("Page \"{page_id}\" locale \"{locale}\" must be an object"))
+        invalid_data(format!(
+            "Page \"{page_id}\" locale \"{locale}\" must be an object"
+        ))
     })?;
 
     for field in ["status", "updatedAt"] {

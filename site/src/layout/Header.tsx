@@ -1,35 +1,30 @@
 import { Link, useLocation } from 'react-router-dom';
-import { defaultLocale, isLocale, type Locale } from '../i18n/locales';
-import { getPagePath, resolveRoute } from '../site';
+import type { SiteRuntime } from '../application/site-contract';
+import { useSite } from '../application/use-site';
 
-function getActiveLocale(pathname: string): Locale {
-  const firstSegment = pathname.split('/').filter(Boolean)[0];
-
-  return isLocale(firstSegment) ? firstSegment : defaultLocale;
-}
-
-function getAlternatePath(pathname: string, targetLocale: Locale) {
-  const route = resolveRoute(pathname);
+function getAlternatePath(site: SiteRuntime, pathname: string, targetLocale: string) {
+  const route = site.resolveRoute(pathname);
 
   if (route.kind === 'page') {
-    return route.seo.alternates.find((alternate) => alternate.locale === targetLocale)?.path ?? getPagePath('home', targetLocale);
+    return route.seo.alternates.find((alternate) => alternate.locale === targetLocale)?.path ?? site.getPagePath('home', targetLocale);
   }
 
-  return getPagePath('home', targetLocale);
+  return site.getPagePath('home', targetLocale);
 }
 
 export function Header() {
+  const site = useSite();
   const location = useLocation();
-  const locale = getActiveLocale(location.pathname);
+  const locale = site.getActiveLocale(location.pathname);
   const isFrench = locale === 'fr-fr';
 
-  const homePath = getPagePath('home', locale);
-  const projectsPath = getPagePath('projects', locale);
-  const blogPath = getPagePath('blog', locale);
-  const contactPath = getPagePath('contact', locale);
+  const homePath = site.getPagePath('home', locale);
+  const projectsPath = site.getPagePath('projects', locale);
+  const blogPath = site.getPagePath('blog', locale);
+  const contactPath = site.getPagePath('contact', locale);
 
-  const frPath = getAlternatePath(location.pathname, 'fr-fr') ?? '/fr-fr/';
-  const enPath = getAlternatePath(location.pathname, 'en-us') ?? '/en-us/';
+  const frPath = getAlternatePath(site, location.pathname, 'fr-fr') ?? '/fr-fr/';
+  const enPath = getAlternatePath(site, location.pathname, 'en-us') ?? '/en-us/';
 
   return (
     <header className="site-header">

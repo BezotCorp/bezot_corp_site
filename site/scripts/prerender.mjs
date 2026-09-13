@@ -1,19 +1,17 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { readContentIndexes } from './read-content-indexes.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
 const serverEntryPath = path.join(distDir, 'server', 'entry-server.js');
 const templatePath = path.join(distDir, 'index.html');
-const source = readContentIndexes();
-
 const template = readFileSync(templatePath, 'utf-8');
 
 const serverEntry = await import(pathToFileURL(serverEntryPath).href);
-const { render, getPrerenderRoutes } = serverEntry;
+const { render, getPrerenderRoutes, getSiteContent } = serverEntry;
+const source = getSiteContent();
 
 const siteUrl = source.site.baseUrl;
 const siteName = source.site.name;

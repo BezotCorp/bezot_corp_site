@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import type { ContentBlock, SeoMetadata } from '../application/site-contract';
+import { useSite } from '../application/use-site';
 import { BlockRenderer } from '../blocks/BlockRenderer';
 import { MainLayout } from '../layout/MainLayout';
 import { applySeo } from '../seo';
-import type { SeoMetadata } from '../site';
 
 type Props = {
   page: {
@@ -11,10 +12,7 @@ type Props = {
       title: string;
       description?: string;
     };
-    blocks: readonly {
-      type: string;
-      props?: Record<string, unknown>;
-    }[];
+    blocks: readonly ContentBlock[];
   };
   seo: SeoMetadata;
 };
@@ -54,9 +52,11 @@ function getBreadcrumbs(seo: SeoMetadata) {
 }
 
 export function PageTemplate({ page, seo }: Props) {
+  const site = useSite();
+
   useEffect(() => {
-    applySeo(seo);
-  }, [seo]);
+    applySeo(seo, site.metadata);
+  }, [seo, site]);
 
   const breadcrumbs = getBreadcrumbs(seo);
 

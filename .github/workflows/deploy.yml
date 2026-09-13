@@ -22,12 +22,13 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+          cache-dependency-path: site/pnpm-lock.yaml
 
-      - name: Install
-        run: pnpm install --frozen-lockfile
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
 
-      - name: Production
-        run: pnpm production
+      - name: Prepare checked final site
+        run: cargo run --release --manifest-path bezot_project_assembler/Cargo.toml -- site production
 
       - name: Deploy to OVH
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -37,5 +38,5 @@ jobs:
           password: ${{ secrets.OVH_FTP_PASSWORD }}
           protocol: ftp
           port: 21
-          local-dir: ./site/dist/
+          local-dir: ./site/prebuild/dist/
           server-dir: ./www/

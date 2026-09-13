@@ -1,5 +1,5 @@
 type Props = {
-  props?: Record<string, unknown>;
+  props?: Readonly<Record<string, unknown>>;
 };
 
 export function ParagraphBlock({ props }: Props) {
