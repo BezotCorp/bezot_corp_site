@@ -15,6 +15,7 @@ pub struct StudioState {
     pub page_index: usize,
     pub selected_entry_id: Option<String>,
     pub post_editor: PostEditorState,
+    pub library_visible: bool,
     pub notice: Option<String>,
     pub error: Option<String>,
 }
@@ -65,6 +66,12 @@ impl StudioState {
     pub(crate) fn clamp_page_index(&mut self) {
         let last_page_index = self.page_count().saturating_sub(1);
         self.page_index = self.page_index.min(last_page_index);
+    }
+
+    pub(crate) fn edited_post_exists(&self) -> bool {
+        self.entries
+            .iter()
+            .any(|entry| entry.kind == "post" && entry.id == self.post_editor.id)
     }
 }
 

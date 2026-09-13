@@ -181,9 +181,10 @@ mod tests {
 
         let index = read_json(&blog_dir.join("index.json")).unwrap();
         let post_paths = index.get("postPaths").and_then(Value::as_array).unwrap();
+        let expected_path = format!("posts/{}/{}.json", editor.date, editor.id);
         assert_eq!(
             post_paths.first().and_then(Value::as_str),
-            Some("posts/2026-09-14/new-blog-post.json")
+            Some(expected_path.as_str())
         );
 
         fs::remove_dir_all(project_root).unwrap();

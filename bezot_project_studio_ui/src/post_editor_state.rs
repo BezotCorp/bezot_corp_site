@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::post_locale_editor::PostLocaleEditor;
+use common::{new_uuid, today_yyyy_mm_dd};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub(crate) struct PostEditorState {
@@ -15,8 +16,8 @@ pub(crate) struct PostEditorState {
 impl Default for PostEditorState {
     fn default() -> Self {
         Self {
-            id: "new-blog-post".to_string(),
-            date: "2026-09-14".to_string(),
+            id: new_uuid(),
+            date: today_yyyy_mm_dd(),
             status: "draft".to_string(),
             author: "Bezot Corp".to_string(),
             fr: PostLocaleEditor::french_default(),

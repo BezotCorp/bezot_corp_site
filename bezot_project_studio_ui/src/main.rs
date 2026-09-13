@@ -5,6 +5,7 @@ mod localized_content_summary;
 mod message;
 mod post_editor_state;
 mod post_locale_editor;
+mod post_quality;
 mod post_reader;
 mod post_writer;
 mod project_paths;
@@ -25,6 +26,7 @@ use message::Message;
 use post_reader::load_post_editor;
 use post_writer::save_post_with_core;
 use project_paths::resolve_project_root;
+use studio_core_runner::{run_studio_core, studio_core_failure};
 use studio_state::StudioState;
 use studio_view::view;
 
@@ -39,6 +41,7 @@ fn main() -> Result {
             page_index: 0,
             selected_entry_id: None,
             post_editor: Default::default(),
+            library_visible: true,
             notice: None,
             error: Some(error.to_string()),
         },
@@ -64,6 +67,7 @@ fn boot_state() -> io::Result<StudioState> {
         page_index: 0,
         selected_entry_id: None,
         post_editor: Default::default(),
+        library_visible: true,
         notice: None,
         error: None,
     })
@@ -107,6 +111,7 @@ fn update(state: &mut StudioState, message: Message) {
                     Ok(editor) => {
                         state.post_editor = editor;
                         state.notice = Some(format!("Article chargé : {selected_id}."));
+                        state.library_visible = false;
                         state.error = None;
                     }
                     Err(error) => {
@@ -121,8 +126,27 @@ fn update(state: &mut StudioState, message: Message) {
         Message::NewPost => {
             state.post_editor = Default::default();
             state.notice = Some("Nouveau brouillon d’article prêt.".to_string());
+            state.selected_entry_id = None;
+            state.library_visible = false;
             state.error = None;
         }
+        Message::ShowLibrary => {
+            state.library_visible = true;
+            state.notice = Some("Bibliothèque affichée.".to_string());
+            state.error = None;
+        }
+        Message::HideLibrary => {
+            state.library_visible = false;
+        }
+        Message::PrepareSite => match prepare_site(&state.project_root) {
+            Ok(()) => {
+                state.notice = Some("Site final préparé avec succès.".to_string());
+                state.error = None;
+            }
+            Err(error) => {
+                state.error = Some(error.to_string());
+            }
+        },
         Message::SearchQueryChanged(value) => {
             state.search_query = value;
             state.reset_page();
@@ -141,7 +165,25 @@ fn update(state: &mut StudioState, message: Message) {
         }
         Message::PreviousPage => state.previous_page(),
         Message::NextPage => state.next_page(),
-        Message::PostIdChanged(value) => state.post_editor.id = value,
+        Message::MarkDraft => state.post_editor.status = "draft".to_string(),
+        Message::MarkPublished => state.post_editor.status = "published".to_string(),
+        Message::MarkArchived => state.post_editor.status = "archived".to_string(),
+        Message::ApplySeoTemplate => {
+            apply_seo_template(&mut state.post_editor);
+            state.notice = Some("Modèle SEO appliqué.".to_string());
+            state.error = None;
+        }
+        Message::ApplyMonetizedTemplate => {
+            apply_monetized_template(&mut state.post_editor);
+            state.notice = Some("Modèle monétisé appliqué.".to_string());
+            state.error = None;
+        }
+        Message::ClearAffiliateFields => {
+            clear_affiliate_fields(&mut state.post_editor.fr);
+            clear_affiliate_fields(&mut state.post_editor.en);
+            state.notice = Some("Champs affiliation vidés.".to_string());
+            state.error = None;
+        }
         Message::PostDateChanged(value) => state.post_editor.date = value,
         Message::PostStatusChanged(value) => state.post_editor.status = value,
         Message::PostAuthorChanged(value) => state.post_editor.author = value,
@@ -183,28 +225,85 @@ fn update(state: &mut StudioState, message: Message) {
         Message::PostEnglishAffiliateDisclosureChanged(value) => {
             state.post_editor.en.affiliate_disclosure = value;
         }
-        Message::SavePost => match save_post_with_core(&state.project_root, &state.post_editor) {
-            Ok(()) => match load_content_entries(&state.project_root) {
-                Ok(entries) => {
-                    state.entries = entries;
-                    state.clamp_page_index();
-                    state.notice = Some(format!("Article enregistré : {}.", state.post_editor.id));
-                    state.error = None;
-                }
+        Message::SavePost => {
+            let existed_before_save = state.edited_post_exists();
+            match save_post_with_core(&state.project_root, &state.post_editor) {
+                Ok(()) => match load_content_entries(&state.project_root) {
+                    Ok(entries) => {
+                        state.entries = entries;
+                        state.clamp_page_index();
+                        state.notice = Some(if existed_before_save {
+                            format!("Article mis à jour : {}.", state.post_editor.id)
+                        } else {
+                            format!("Article créé : {}.", state.post_editor.id)
+                        });
+                        state.error = None;
+                    }
+                    Err(error) => {
+                        state.notice = Some(if existed_before_save {
+                            format!("Article mis à jour : {}.", state.post_editor.id)
+                        } else {
+                            format!("Article créé : {}.", state.post_editor.id)
+                        });
+                        state.error = Some(format!("Impossible de recharger le contenu : {error}"));
+                    }
+                },
                 Err(error) => {
-                    state.notice = Some(format!("Article enregistré : {}.", state.post_editor.id));
-                    state.error = Some(format!("Impossible de recharger le contenu : {error}"));
+                    state.error = Some(error.to_string());
                 }
-            },
-            Err(error) => {
-                state.error = Some(error.to_string());
             }
-        },
+        }
     }
 }
 
 fn theme(_state: &StudioState) -> Theme {
     Theme::Dark
+}
+
+fn apply_seo_template(editor: &mut post_editor_state::PostEditorState) {
+    editor.status = "draft".to_string();
+    editor.author = "Bezot Corp".to_string();
+    editor.fr.description =
+        "Un article Bezot Corp conçu pour répondre clairement à une question précise et améliorer la visibilité organique du site.".to_string();
+    editor.en.description =
+        "A Bezot Corp article designed to answer a focused question clearly and improve the site's organic visibility.".to_string();
+    editor.fr.paragraph =
+        "Commence par une réponse directe au problème du lecteur, puis développe les critères de décision, les limites et les étapes concrètes à suivre. L’objectif est de publier un contenu utile, compréhensible et assez précis pour être référencé sur une requête longue traîne.".to_string();
+    editor.en.paragraph =
+        "Start with a direct answer to the reader's problem, then explain the decision criteria, the limits, and the concrete next steps. The goal is to publish useful, understandable, and precise content that can rank for a long-tail query.".to_string();
+}
+
+fn apply_monetized_template(editor: &mut post_editor_state::PostEditorState) {
+    apply_seo_template(editor);
+    editor.fr.affiliate_title = "Ressource recommandée".to_string();
+    editor.fr.affiliate_text =
+        "Un outil ou une ressource complémentaire pour passer plus vite de l’idée à l’action."
+            .to_string();
+    editor.fr.affiliate_label = "Voir l’offre".to_string();
+    editor.fr.affiliate_disclosure = "Lien affilié ou sponsorisé.".to_string();
+    editor.en.affiliate_title = "Recommended resource".to_string();
+    editor.en.affiliate_text =
+        "A complementary tool or resource to move faster from idea to action.".to_string();
+    editor.en.affiliate_label = "View offer".to_string();
+    editor.en.affiliate_disclosure = "Affiliate or sponsored link.".to_string();
+}
+
+fn clear_affiliate_fields(editor: &mut post_locale_editor::PostLocaleEditor) {
+    editor.affiliate_title.clear();
+    editor.affiliate_text.clear();
+    editor.affiliate_url.clear();
+    editor.affiliate_label.clear();
+    editor.affiliate_disclosure.clear();
+}
+
+fn prepare_site(project_root: &std::path::Path) -> io::Result<()> {
+    let output = run_studio_core(&[project_root.as_os_str().to_owned(), "production".into()])?;
+
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(studio_core_failure(&output))
+    }
 }
 
 fn invalid_input(message: impl Into<String>) -> io::Error {
