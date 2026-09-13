@@ -2,6 +2,8 @@ use std::io;
 use std::path::Path;
 use std::process::Command;
 
+use common::invalid_data;
+
 use crate::content_entry::ContentEntry;
 use crate::project_paths::studio_core_manifest_path;
 
@@ -27,8 +29,4 @@ pub(crate) fn load_content_entries(project_root: &Path) -> io::Result<Vec<Conten
     }
 
     serde_json::from_slice(&output.stdout).map_err(invalid_data)
-}
-
-fn invalid_data(message: impl ToString) -> io::Error {
-    io::Error::new(io::ErrorKind::InvalidData, message.to_string())
 }

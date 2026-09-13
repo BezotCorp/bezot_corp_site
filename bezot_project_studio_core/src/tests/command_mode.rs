@@ -1,4 +1,4 @@
-use crate::CommandMode;
+use crate::command_mode::CommandMode;
 
 #[test]
 fn parses_modes() {
