@@ -1,15 +1,15 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub(crate) struct PostLocaleEditor {
-    pub(crate) title: String,
-    pub(crate) slug: String,
-    pub(crate) description: String,
-    pub(crate) paragraph: String,
+pub struct PostLocaleEditor {
+    pub title: String,
+    pub slug: String,
+    pub description: String,
+    pub paragraph: String,
 }
 
 impl PostLocaleEditor {
-    pub(crate) fn french_default() -> Self {
+    pub fn french_default() -> Self {
         Self {
             title: "Nouvel article Bezot Corp".to_string(),
             slug: "blog/nouvel-article".to_string(),
@@ -18,7 +18,7 @@ impl PostLocaleEditor {
         }
     }
 
-    pub(crate) fn english_default() -> Self {
+    pub fn english_default() -> Self {
         Self {
             title: "New Bezot Corp article".to_string(),
             slug: "blog/new-article".to_string(),

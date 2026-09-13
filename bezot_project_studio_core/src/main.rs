@@ -2,10 +2,16 @@ mod assembler_runner;
 mod command_mode;
 mod content_entry;
 mod content_list_command;
+mod content_post_command;
 mod content_reader;
 mod launcher;
 mod localized_content_summary;
 mod output_format;
+mod post_document;
+mod post_editor_state;
+mod post_locale_editor;
+mod post_reader;
+mod post_writer;
 mod process_runner;
 mod project_paths;
 

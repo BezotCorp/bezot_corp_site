@@ -5,53 +5,53 @@ use serde::Serialize;
 use crate::post_editor_state::PostEditorState;
 
 #[derive(Debug, Serialize)]
-pub(crate) struct PostDocument {
-    pub(crate) id: String,
+pub struct PostDocument {
+    pub id: String,
     #[serde(rename = "type")]
-    pub(crate) kind: String,
-    pub(crate) status: String,
-    pub(crate) author: String,
+    pub kind: String,
+    pub status: String,
+    pub author: String,
     #[serde(rename = "publishedAt")]
-    pub(crate) published_at: String,
+    pub published_at: String,
     #[serde(rename = "updatedAt")]
-    pub(crate) updated_at: String,
-    pub(crate) locales: BTreeMap<String, PostLocaleDocument>,
+    pub updated_at: String,
+    pub locales: BTreeMap<String, PostLocaleDocument>,
 }
 
 #[derive(Debug, Serialize)]
-pub(crate) struct PostLocaleDocument {
-    pub(crate) slug: String,
-    pub(crate) seo: PostSeoDocument,
-    pub(crate) blocks: Vec<PostBlockDocument>,
+pub struct PostLocaleDocument {
+    pub slug: String,
+    pub seo: PostSeoDocument,
+    pub blocks: Vec<PostBlockDocument>,
 }
 
 #[derive(Debug, Serialize)]
-pub(crate) struct PostSeoDocument {
-    pub(crate) title: String,
-    pub(crate) description: String,
+pub struct PostSeoDocument {
+    pub title: String,
+    pub description: String,
     #[serde(rename = "ogTitle")]
-    pub(crate) og_title: String,
+    pub og_title: String,
     #[serde(rename = "ogDescription")]
-    pub(crate) og_description: String,
+    pub og_description: String,
     #[serde(rename = "ogImage")]
-    pub(crate) og_image: String,
+    pub og_image: String,
 }
 
 #[derive(Debug, Serialize)]
-pub(crate) struct PostBlockDocument {
+pub struct PostBlockDocument {
     #[serde(rename = "type")]
-    pub(crate) kind: String,
-    pub(crate) props: PostBlockPropsDocument,
+    pub kind: String,
+    pub props: PostBlockPropsDocument,
 }
 
 #[derive(Debug, Serialize)]
-pub(crate) struct PostBlockPropsDocument {
+pub struct PostBlockPropsDocument {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) title: Option<String>,
+    pub title: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) subtitle: Option<String>,
+    pub subtitle: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) text: Option<String>,
+    pub text: Option<String>,
 }
 
 impl From<&PostEditorState> for PostDocument {

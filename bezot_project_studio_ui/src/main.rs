@@ -3,7 +3,6 @@ mod content_kind_filter;
 mod content_loader;
 mod localized_content_summary;
 mod message;
-mod post_document;
 mod post_editor_state;
 mod post_locale_editor;
 mod post_reader;
@@ -23,7 +22,7 @@ use content_kind_filter::ContentKindFilter;
 use content_loader::load_content_entries;
 use message::Message;
 use post_reader::load_post_editor;
-use post_writer::save_post;
+use post_writer::save_post_with_core;
 use project_paths::resolve_project_root;
 use studio_state::StudioState;
 use studio_view::view;
@@ -153,7 +152,7 @@ fn update(state: &mut StudioState, message: Message) {
         Message::PostEnglishSlugChanged(value) => state.post_editor.en.slug = value,
         Message::PostEnglishDescriptionChanged(value) => state.post_editor.en.description = value,
         Message::PostEnglishParagraphChanged(value) => state.post_editor.en.paragraph = value,
-        Message::SavePost => match save_post(&state.project_root, &state.post_editor) {
+        Message::SavePost => match save_post_with_core(&state.project_root, &state.post_editor) {
             Ok(()) => match load_content_entries(&state.project_root) {
                 Ok(entries) => {
                     state.entries = entries;
