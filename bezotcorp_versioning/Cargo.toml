@@ -1,0 +1,13 @@
+[package]
+name = "bezotcorp_versioning"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "bcv"
+path = "src/main.rs"
+
+[dependencies]
+gix = "0.86"
+clap = { version = "4.6", features = ["derive"] }
+anyhow = "1.0"
