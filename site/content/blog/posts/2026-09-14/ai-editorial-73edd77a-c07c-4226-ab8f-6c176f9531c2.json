@@ -1,0 +1,96 @@
+{
+  "id": "ai-editorial-73edd77a-c07c-4226-ab8f-6c176f9531c2",
+  "type": "ai_editorial",
+  "status": "published",
+  "author": "Bezot Corp AI",
+  "publishedAt": "2026-09-14",
+  "updatedAt": "2026-09-14",
+  "locales": {
+    "en-us": {
+      "slug": "blog/why-publishing-static-site-git-pull-request",
+      "seo": {
+        "title": "AI Editorial: Why Publishing a Static Site via Git and Automatic Pull Request is a Professional Practice",
+        "description": "We examine the benefits of publishing a static site through Git and automated Pull Requests, highlighting the rigor, collaboration, and security in the deployment process.",
+        "ogTitle": "AI Editorial: Why Publishing a Static Site via Git and Automatic Pull Request is a Professional Practice",
+        "ogDescription": "We examine the benefits of publishing a static site through Git and automated Pull Requests, highlighting the rigor, collaboration, and security in the deployment process.",
+        "ogImage": "/og/bezot-corp-default.png"
+      },
+      "blocks": [
+        {
+          "type": "hero",
+          "props": {
+            "title": "AI Editorial: Why Publishing a Static Site via Git and Automatic Pull Request is a Professional Practice",
+            "subtitle": "AI-generated, reviewed, and published by Bezot Corp."
+          }
+        },
+        {
+          "type": "paragraph",
+          "props": {
+            "text": "At Bezot Corp, we firmly believe that publishing a static site via Git and an automatic Pull Request is an indispensable professional practice. This method ensures precise version control and pre-deployment code validation, guaranteeing maximum site stability."
+          }
+        },
+        {
+          "type": "paragraph",
+          "props": {
+            "text": "Collaboration is enhanced through this process. Each modification is reviewed within a Pull Request, allowing the team to discuss, provide constructive feedback, and ensure that every feature meets quality standards before publication."
+          }
+        },
+        {
+          "type": "paragraph",
+          "props": {
+            "text": "Furthermore, this approach increases deployment security. Automated checks and embedded tests detect potential errors or security vulnerabilities before the code is shipped to the production server, thus reducing the risk of post-deployment incidents."
+          }
+        },
+        {
+          "type": "paragraph",
+          "props": {
+            "text": "Lastly, the transparency provided by this system is invaluable. Every step of the process, from branch creation to Pull Request approval, is clearly documented, facilitating tracking and understanding of the project's history for all team members."
+          }
+        }
+      ]
+    },
+    "fr-fr": {
+      "slug": "blog/pourquoi-publier-site-statique-git-pull-request",
+      "seo": {
+        "title": "Édito IA : Pourquoi publier un site statique via Git et une Pull Request automatique est une pratique professionnelle",
+        "description": "Nous explorons les avantages de la publication d'un site statique à travers Git et des Pull Requests automatiques, soulignant la rigueur, la collaboration et la sécurité dans le processus de déploiement.",
+        "ogTitle": "Édito IA : Pourquoi publier un site statique via Git et une Pull Request automatique est une pratique professionnelle",
+        "ogDescription": "Nous explorons les avantages de la publication d'un site statique à travers Git et des Pull Requests automatiques, soulignant la rigueur, la collaboration et la sécurité dans le processus de déploiement.",
+        "ogImage": "/og/bezot-corp-default.png"
+      },
+      "blocks": [
+        {
+          "type": "hero",
+          "props": {
+            "title": "Édito IA : Pourquoi publier un site statique via Git et une Pull Request automatique est une pratique professionnelle",
+            "subtitle": "Texte généré par IA, relu et publié par Bezot Corp."
+          }
+        },
+        {
+          "type": "paragraph",
+          "props": {
+            "text": "Chez Bezot Corp, nous croyons fermement que la publication d'un site statique via Git et une Pull Request automatique est une pratique professionnelle incontournable. Cette méthode garantit une gestion précise des versions et des validations de code avant le déploiement, assurant ainsi une stabilité maximale du site."
+          }
+        },
+        {
+          "type": "paragraph",
+          "props": {
+            "text": "La collaboration est renforcée grâce à ce processus. Chaque modification est examinée dans le cadre d'une Pull Request, permettant à l'équipe de discuter, de fournir des retours constructifs et de s'assurer que chaque fonctionnalité respecte les standards de qualité avant d'être publiée."
+          }
+        },
+        {
+          "type": "paragraph",
+          "props": {
+            "text": "De plus, cette approche augmente la sécurité du déploiement. Les vérifications automatiques et les tests intégrés dans le flux de travail détectent les erreurs potentielles ou les vulnérabilités de sécurité avant que le code ne soit expédié sur le serveur de production, réduisant ainsi les risques d'incidents post-déploiement."
+          }
+        },
+        {
+          "type": "paragraph",
+          "props": {
+            "text": "Enfin, la transparence offerte par ce système est inestimable. Chaque étape du processus, de la création de la branche à l'approbation de la Pull Request, est clairement documentée, facilitant ainsi le suivi et la compréhension de l'historique du projet pour tous les membres de l'équipe."
+          }
+        }
+      ]
+    }
+  }
+}
