@@ -60,8 +60,7 @@ anything. If a slug changed, they append a 301 entry from the old path to
 the new one to `site/content/redirects.json` (skipped if an entry for that
 old path already exists, so a manually curated redirect is never
 overwritten). This makes slug changes safe by default: no separate step is
-required to avoid turning
-a published URL into a 404.
+required to avoid turning a published URL into a 404.
 
 ### `bezot_project_studio_ui`
 
@@ -85,11 +84,27 @@ It may be called by the studio UI, by cron, or manually. It must use stable
 project executable commands for content writes, validation, preview, and final
 site preparation.
 
-Initial command:
+Initial commands:
 
 ```sh
 cargo run --manifest-path bezot_project_editorial_ai/Cargo.toml -- site audit
+cargo run --manifest-path bezot_project_editorial_ai/Cargo.toml -- site draft --model <name> --topic "<topic>"
+cargo run --manifest-path bezot_project_editorial_ai/Cargo.toml -- site review --model <name>
 ```
+
+`draft` and `review` call a local Ollama server (`http://localhost:11434`),
+never a hosted API — `--model` must name a model already pulled locally
+(`ollama list`). `draft` asks the model for a bilingual post (title, slug,
+SEO description, paragraph per locale) and saves it through
+`content post save`, exactly as the studio UI would; the id is prefixed
+`ai-editorial-` so `audit` picks it up. `review` fetches every published
+post's full content through `content post get` (never reads post JSON
+directly) and asks the model for a per-locale SEO score, an update flag, and
+concrete suggestions — output only, no writes.
+
+There is no hardcoded default model: pick one that fits your available VRAM
+(a 7B–14B quantized model is a reasonable starting point; a 30B+ model may
+not leave headroom for anything else running locally).
 
 ### `bezot_project_assembler`
 
