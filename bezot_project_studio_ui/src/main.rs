@@ -1,10 +1,17 @@
+mod card_item_field;
 mod content_entry;
 mod content_kind_filter;
 mod content_loader;
+mod editor_target;
 mod locale;
 mod localized_content_summary;
 mod message;
 mod page;
+mod page_block_field;
+mod page_field;
+mod page_reader;
+mod page_workspace_view;
+mod page_writer;
 mod post_field;
 mod post_reader;
 mod post_writer;
@@ -25,8 +32,11 @@ use iced::{Result, Theme, application};
 
 use content_kind_filter::ContentKindFilter;
 use content_loader::load_content_entries;
+use editor_target::EditorTarget;
 use message::Message;
 use page::Page;
+use page_reader::load_page_editor;
+use page_writer::save_page_with_core;
 use post_reader::load_post_editor;
 use post_writer::save_post_with_core;
 use project_paths::resolve_project_root;
@@ -45,6 +55,8 @@ fn main() -> Result {
             page_index: 0,
             selected_entry_id: None,
             post_editor: Default::default(),
+            page_editor: Default::default(),
+            editor_target: EditorTarget::Post,
             current_page: Page::Dashboard,
             notice: None,
             error: Some(error.to_string()),
@@ -71,6 +83,8 @@ fn boot_state() -> io::Result<StudioState> {
         page_index: 0,
         selected_entry_id: None,
         post_editor: Default::default(),
+        page_editor: Default::default(),
+        editor_target: EditorTarget::Post,
         current_page: Page::Dashboard,
         notice: None,
         error: None,
@@ -109,12 +123,13 @@ fn update(state: &mut StudioState, message: Message) {
                 .map(|entry| entry.kind.as_str());
 
             state.selected_entry_id = Some(id);
+            let selected_id = state.selected_entry_id.clone().unwrap_or_default();
 
-            if selected_kind == Some("post") {
-                let selected_id = state.selected_entry_id.as_deref().unwrap_or_default();
-                match load_post_editor(&state.project_root, selected_id) {
+            match selected_kind {
+                Some("post") => match load_post_editor(&state.project_root, &selected_id) {
                     Ok(editor) => {
                         state.post_editor = editor;
+                        state.editor_target = EditorTarget::Post;
                         state.notice = Some(format!("Article chargé : {selected_id}."));
                         state.current_page = Page::Editor;
                         state.error = None;
@@ -122,15 +137,36 @@ fn update(state: &mut StudioState, message: Message) {
                     Err(error) => {
                         state.error = Some(error.to_string());
                     }
+                },
+                Some("page") => match load_page_editor(&state.project_root, &selected_id) {
+                    Ok(editor) => {
+                        state.page_editor = editor;
+                        state.editor_target = EditorTarget::Page;
+                        state.notice = Some(format!("Page chargée : {selected_id}."));
+                        state.current_page = Page::Editor;
+                        state.error = None;
+                    }
+                    Err(error) => {
+                        state.error = Some(error.to_string());
+                    }
+                },
+                _ => {
+                    state.notice = Some("Contenu inconnu.".to_string());
                 }
-            } else {
-                state.notice =
-                    Some("L’édition des pages n’est pas encore dans cette tranche.".to_string());
             }
         }
         Message::NewPost => {
             state.post_editor = Default::default();
+            state.editor_target = EditorTarget::Post;
             state.notice = Some("Nouveau brouillon d’article prêt.".to_string());
+            state.selected_entry_id = None;
+            state.current_page = Page::Editor;
+            state.error = None;
+        }
+        Message::NewPage => {
+            state.page_editor = Default::default();
+            state.editor_target = EditorTarget::Page;
+            state.notice = Some("Nouvelle page prête.".to_string());
             state.selected_entry_id = None;
             state.current_page = Page::Editor;
             state.error = None;
@@ -210,6 +246,113 @@ fn update(state: &mut StudioState, message: Message) {
                 }
             }
         }
+
+        Message::PageIdChanged(value) => state.page_editor.id = value,
+        Message::PageFieldChanged(locale, field, value) => {
+            *page_field::field_mut(
+                locale::page_locale_mut(&mut state.page_editor, locale),
+                field,
+            ) = value;
+        }
+        Message::MarkPageDraft(locale) => {
+            locale::page_locale_mut(&mut state.page_editor, locale).status = "draft".to_string();
+        }
+        Message::MarkPagePublished(locale) => {
+            locale::page_locale_mut(&mut state.page_editor, locale).status =
+                "published".to_string();
+        }
+        Message::AddPageBlock(locale, kind) => {
+            locale::page_locale_mut(&mut state.page_editor, locale)
+                .blocks
+                .push(kind.new_block());
+        }
+        Message::RemovePageBlock(locale, index) => {
+            let blocks = &mut locale::page_locale_mut(&mut state.page_editor, locale).blocks;
+            if index < blocks.len() {
+                blocks.remove(index);
+            }
+        }
+        Message::MovePageBlockUp(locale, index) => {
+            let blocks = &mut locale::page_locale_mut(&mut state.page_editor, locale).blocks;
+            if index > 0 && index < blocks.len() {
+                blocks.swap(index - 1, index);
+            }
+        }
+        Message::MovePageBlockDown(locale, index) => {
+            let blocks = &mut locale::page_locale_mut(&mut state.page_editor, locale).blocks;
+            if index + 1 < blocks.len() {
+                blocks.swap(index, index + 1);
+            }
+        }
+        Message::PageBlockTextChanged(locale, index, field, value) => {
+            let blocks = &mut locale::page_locale_mut(&mut state.page_editor, locale).blocks;
+            if let Some(block) = blocks.get_mut(index)
+                && let Some(target) = page_block_field::text_field_mut(block, field)
+            {
+                *target = value;
+            }
+        }
+        Message::PageBlockNumberChanged(locale, index, field, value) => {
+            let blocks = &mut locale::page_locale_mut(&mut state.page_editor, locale).blocks;
+            if let Some(block) = blocks.get_mut(index)
+                && let Some(target) = page_block_field::number_field_mut(block, field)
+            {
+                *target = value.trim().parse().ok();
+            }
+        }
+        Message::PageBlockFlagToggled(locale, index, field) => {
+            let blocks = &mut locale::page_locale_mut(&mut state.page_editor, locale).blocks;
+            if let Some(block) = blocks.get_mut(index)
+                && let Some(target) = page_block_field::flag_mut(block, field)
+            {
+                *target = !*target;
+            }
+        }
+        Message::AddCardItem(locale, block_index) => {
+            let blocks = &mut locale::page_locale_mut(&mut state.page_editor, locale).blocks;
+            if let Some(common::PageBlock::CardGrid { items }) = blocks.get_mut(block_index) {
+                items.push(Default::default());
+            }
+        }
+        Message::RemoveCardItem(locale, block_index, item_index) => {
+            let blocks = &mut locale::page_locale_mut(&mut state.page_editor, locale).blocks;
+            if let Some(common::PageBlock::CardGrid { items }) = blocks.get_mut(block_index)
+                && item_index < items.len()
+            {
+                items.remove(item_index);
+            }
+        }
+        Message::CardItemFieldChanged(locale, block_index, item_index, field, value) => {
+            let blocks = &mut locale::page_locale_mut(&mut state.page_editor, locale).blocks;
+            if let Some(common::PageBlock::CardGrid { items }) = blocks.get_mut(block_index)
+                && let Some(item) = items.get_mut(item_index)
+            {
+                *card_item_field::field_mut(item, field) = value;
+            }
+        }
+        Message::SavePage => {
+            let existed_before_save = state.edited_page_exists();
+            match save_page_with_core(&state.project_root, &state.page_editor) {
+                Ok(()) => {
+                    state.notice =
+                        Some(save_page_notice(existed_before_save, &state.page_editor.id));
+                    match load_content_entries(&state.project_root) {
+                        Ok(entries) => {
+                            state.entries = entries;
+                            state.clamp_page_index();
+                            state.error = None;
+                        }
+                        Err(error) => {
+                            state.error =
+                                Some(format!("Impossible de recharger le contenu : {error}"));
+                        }
+                    }
+                }
+                Err(error) => {
+                    state.error = Some(error.to_string());
+                }
+            }
+        }
     }
 }
 
@@ -272,5 +415,13 @@ fn save_notice(existed_before_save: bool, post_id: &str) -> String {
         format!("Article mis à jour : {post_id}.")
     } else {
         format!("Article créé : {post_id}.")
+    }
+}
+
+fn save_page_notice(existed_before_save: bool, page_id: &str) -> String {
+    if existed_before_save {
+        format!("Page mise à jour : {page_id}.")
+    } else {
+        format!("Page créée : {page_id}.")
     }
 }

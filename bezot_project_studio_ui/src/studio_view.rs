@@ -5,9 +5,11 @@ use common::{PostEditorState, PostLocaleEditor, PostQualityReport};
 
 use crate::content_entry::ContentEntry;
 use crate::content_kind_filter::ContentKindFilter;
+use crate::editor_target::EditorTarget;
 use crate::locale::Locale;
 use crate::message::Message;
 use crate::page::Page;
+use crate::page_workspace_view::page_workspace_view;
 use crate::post_field::PostField;
 use crate::studio_state::StudioState;
 use crate::styles::{
@@ -22,7 +24,10 @@ pub(crate) fn view(state: &StudioState) -> Element<'_, Message> {
     let page_content = match state.current_page {
         Page::Dashboard => dashboard_page_view(state),
         Page::Library => content_sidebar_view(state),
-        Page::Editor => post_workspace_view(state),
+        Page::Editor => match state.editor_target {
+            EditorTarget::Post => post_workspace_view(state),
+            EditorTarget::Page => page_workspace_view(state),
+        },
         Page::SiteTools => site_tools_page_view(state),
     };
 
@@ -253,6 +258,8 @@ fn content_sidebar_view(state: &StudioState) -> Element<'_, Message> {
             status_chip(format!("{} pages", pages)),
             status_chip(format!("{} articles", posts)),
             button("Recharger").on_press(Message::ReloadContent),
+            button("Nouveau brouillon").on_press(Message::NewPost),
+            button("Nouvelle page").on_press(Message::NewPage),
         ]
         .spacing(8),
         text(format!(

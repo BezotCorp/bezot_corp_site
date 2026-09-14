@@ -2,8 +2,9 @@ use std::path::PathBuf;
 
 use crate::content_entry::ContentEntry;
 use crate::content_kind_filter::ContentKindFilter;
+use crate::editor_target::EditorTarget;
 use crate::page::Page;
-use common::PostEditorState;
+use common::{PageEditorState, PostEditorState};
 
 const PAGE_SIZE: usize = 6;
 
@@ -16,6 +17,8 @@ pub struct StudioState {
     pub page_index: usize,
     pub selected_entry_id: Option<String>,
     pub post_editor: PostEditorState,
+    pub page_editor: PageEditorState,
+    pub editor_target: EditorTarget,
     pub current_page: Page,
     pub notice: Option<String>,
     pub error: Option<String>,
@@ -73,6 +76,12 @@ impl StudioState {
         self.entries
             .iter()
             .any(|entry| entry.kind == "post" && entry.id == self.post_editor.id)
+    }
+
+    pub(crate) fn edited_page_exists(&self) -> bool {
+        self.entries
+            .iter()
+            .any(|entry| entry.kind == "page" && entry.id == self.page_editor.id)
     }
 }
 

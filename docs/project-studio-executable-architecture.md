@@ -49,9 +49,10 @@ cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content p
 cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content page save
 ```
 
-`content page get|save` is not wired into `bezot_project_studio_ui` yet: the
-executable can create and edit page content, but the Iced UI still cannot.
-See [Known gaps](#known-gaps).
+`bezot_project_studio_ui` now edits both content kinds: selecting a page in
+the library loads it into a dedicated block editor (add, remove, and reorder
+`hero`/`paragraph`/`mail_link`/`card_grid`/`affiliate_callout`/`post_list`
+blocks per locale) that saves back through `content page save`.
 
 `content post save` and `content page save` both compare the entry's
 previously stored slug (per locale) against the incoming one before writing
@@ -186,12 +187,6 @@ write path.
 The following are not implemented yet. They are listed here so new work is not
 built on top of an assumed capability that does not exist.
 
-- **Page editing has no UI yet.** `content page get|save` exists and covers
-  the full page schema — an ordered array of typed blocks validated against
-  `blocks.ron` (`bezot_project_assembler/src/content_validator.rs`):
-  `hero`, `paragraph`, `mail_link`, `card_grid`, `affiliate_callout`, and
-  `post_list` (`common::PageBlock`). `bezot_project_studio_ui` does not call
-  it yet, so pages can only be created or edited from the terminal today.
 - **No content deletion.** No command or UI action removes a page or post;
   only build output cleanup exists (`bezot_project_assembler/src/prebuild_writer.rs`).
 - **No media/image handling in the studio.** Images referenced by content

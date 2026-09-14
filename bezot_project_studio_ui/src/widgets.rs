@@ -37,13 +37,16 @@ pub(crate) fn checklist_line(label: &str, valid: bool) -> String {
 }
 
 pub(crate) fn labeled_input<'a>(
-    label: &'a str,
-    value: &'a str,
+    label: impl Into<String>,
+    value: impl Into<String>,
     on_input: impl Fn(String) -> Message + 'a,
 ) -> Element<'a, Message> {
+    let label = label.into();
+    let value = value.into();
+
     column![
-        text(label).size(12),
-        text_input(label, value).on_input(on_input).padding(12),
+        text(label.clone()).size(12),
+        text_input(&label, &value).on_input(on_input).padding(12),
     ]
     .spacing(5)
     .width(Fill)
