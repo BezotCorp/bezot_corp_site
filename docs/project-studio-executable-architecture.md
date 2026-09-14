@@ -42,7 +42,14 @@ cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site dev
 cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site production
 cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content list --format text
 cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content list --format json
+cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content post get <post-id>
+cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content post quality <post-id>
+cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content post save
 ```
+
+There is no `content page` command yet: page content (as opposed to blog posts) cannot
+be created or edited through `bezot_project_studio_core` or `bezot_project_studio_ui`.
+See [Known gaps](#known-gaps).
 
 ### `bezot_project_studio_ui`
 
@@ -86,6 +93,29 @@ It owns the technical assembly boundary:
 
 Other tools may call it as a process. It must not be treated as an in-process
 library unless a future architecture document explicitly changes this rule.
+
+### `common`
+
+`common` is a shared Rust library crate, not a project tool. It is the one
+exception to the "no in-process library" rule, because it does not own project
+rules or side effects: it only holds data types and small pure utilities that
+would otherwise be duplicated across executables.
+
+`common` currently owns:
+
+- `PostEditorState` / `PostLocaleEditor`: the editable post data model, shared
+  by `bezot_project_studio_core` (which validates and persists it) and
+  `bezot_project_studio_ui` (which edits it in memory before sending it back
+  to `bezot_project_studio_core` through the `content post save` command);
+- `PostQualityReport`: the editorial scoring logic, so the score shown live in
+  the UI and the score returned by `content post quality` are the same
+  computation, not two implementations that can drift;
+- generic helpers: UUIDs, dates, JSON reading, error constructors, path
+  resolution.
+
+Any executable may depend on `common`. No executable may depend on another
+executable's crate as a library — that boundary is still process execution
+only, per the [Rule](#rule) above.
 
 ## Command ownership
 
@@ -139,6 +169,38 @@ Editorial automation follows the same rules as the UI.
 It may create or update drafts only through stable executable commands. Cron and
 UI-triggered editorial actions must therefore share the same validation and
 write path.
+
+## Known gaps
+
+The following are not implemented yet. They are listed here so new work is not
+built on top of an assumed capability that does not exist.
+
+- **Page editing.** Only blog posts have an executable-backed create/edit path
+  (`content post get|quality|save`). Pages are composed of an arbitrary
+  ordered array of typed blocks validated against `blocks.ron`
+  (`bezot_project_assembler/src/content_validator.rs`), a structurally
+  different and larger problem than the fixed post schema. Today the only way
+  to create or edit a page is to hand-edit
+  `site/content/pages/<id>/index.json` and its locale files directly, which
+  the UI boundary above forbids for any content a command already covers —
+  pages are the one content kind with no covering command yet.
+- **No redirect automation on slug change.** `content post save` persists
+  whatever slug is in the editor; it does not compare it against the
+  previously stored slug and never touches `site/content/redirects.json`.
+  Canonical URLs are computed at build time from the current slug
+  (`site/src/seo.ts`, `site/src/templates/PageTemplate.tsx`), so changing a
+  published slug without manually adding a `redirects.json` entry silently
+  turns the old URL into a 404 with no redirect and no warning from any
+  check in [project-checks.md](./project-checks.md).
+- **No content deletion.** No command or UI action removes a page or post;
+  only build output cleanup exists (`bezot_project_assembler/src/prebuild_writer.rs`).
+- **No media/image handling in the studio.** Images referenced by content
+  (e.g. `ogImage`) must be placed by hand; there is no upload or asset
+  command.
+- **No real draft preview link.** The "Pilotage" panel in the editor shows an
+  editorial quality score, not a URL a reviewer can open to see the rendered
+  draft before it is published.
+- **No analytics integration** anywhere in the repository.
 
 ## Rationale
 
