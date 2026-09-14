@@ -1,10 +1,13 @@
-use iced::Element;
-use iced::widget::{button, column, row, text};
+use iced::{
+    Element,
+    widget::{button, column, row, text},
+};
 
 use crate::ai_task::AiTask;
 use crate::editorial_ai_client::{OllamaModel, PostReview};
 use crate::message::Message;
 use crate::studio_state::StudioState;
+use crate::task_hint::TaskHint;
 use crate::vram_fit::VramFit;
 use crate::widgets::{labeled_input, panel, section_title, status_chip};
 
@@ -70,13 +73,6 @@ fn settings_panel(state: &StudioState) -> Element<'_, Message> {
         .spacing(8),
     )
 }
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum TaskHint {
-    Prose,
-    Analysis,
-}
-
 fn model_catalog_panel<'a>(
     title: &'a str,
     models: &'a [OllamaModel],

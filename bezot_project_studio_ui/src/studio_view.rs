@@ -1,5 +1,7 @@
-use iced::widget::{button, column, container, row, scrollable, text, text_input};
-use iced::{Element, Fill, Length};
+use iced::{
+    Element, Fill, Length,
+    widget::{button, column, container, row, scrollable, text, text_input},
+};
 
 use common::{PostEditorState, PostLocaleEditor, PostQualityReport};
 
@@ -13,6 +15,7 @@ use crate::message::Message;
 use crate::page::Page;
 use crate::page_workspace_view::page_workspace_view;
 use crate::post_field::PostField;
+use crate::preview_view::real_preview_panel;
 use crate::studio_state::StudioState;
 use crate::styles::{
     accent_color, accent_panel_style, card_style, danger_color, info_color, panel_style,
@@ -453,6 +456,7 @@ fn post_workspace_view(state: &StudioState) -> Element<'_, Message> {
                     section_title("Pilotage"),
                     editorial_score_view(&report),
                     reading_preview_view(editor),
+                    real_preview_panel(state),
                     publication_preview_view(editor, &report),
                     recommendations_view(&report),
                 ]

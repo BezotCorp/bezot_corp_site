@@ -14,17 +14,19 @@ pub(crate) enum PostField {
     AffiliateDisclosure,
 }
 
-pub(crate) fn field_mut(editor: &mut PostLocaleEditor, field: PostField) -> &mut String {
-    match field {
-        PostField::Title => &mut editor.title,
-        PostField::Subtitle => &mut editor.subtitle,
-        PostField::Slug => &mut editor.slug,
-        PostField::Description => &mut editor.description,
-        PostField::OgImage => &mut editor.og_image,
-        PostField::AffiliateTitle => &mut editor.affiliate_title,
-        PostField::AffiliateText => &mut editor.affiliate_text,
-        PostField::AffiliateUrl => &mut editor.affiliate_url,
-        PostField::AffiliateLabel => &mut editor.affiliate_label,
-        PostField::AffiliateDisclosure => &mut editor.affiliate_disclosure,
+impl PostField {
+    pub(crate) fn field_mut(editor: &mut PostLocaleEditor, field: PostField) -> &mut String {
+        match field {
+            Self::Title => &mut editor.title,
+            Self::Subtitle => &mut editor.subtitle,
+            Self::Slug => &mut editor.slug,
+            Self::Description => &mut editor.description,
+            Self::OgImage => &mut editor.og_image,
+            Self::AffiliateTitle => &mut editor.affiliate_title,
+            Self::AffiliateText => &mut editor.affiliate_text,
+            Self::AffiliateUrl => &mut editor.affiliate_url,
+            Self::AffiliateLabel => &mut editor.affiliate_label,
+            Self::AffiliateDisclosure => &mut editor.affiliate_disclosure,
+        }
     }
 }

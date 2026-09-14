@@ -5,9 +5,9 @@ use std::process::Command;
 
 use common::CommandMode;
 
-pub fn execute(mode: CommandMode, project_root: PathBuf) -> io::Result<()> {
+pub fn execute(mode: CommandMode, project_root: PathBuf, port: Option<u16>) -> io::Result<()> {
     match mode {
-        CommandMode::Dev => run_dev(&project_root),
+        CommandMode::Dev => run_dev(&project_root, port),
         CommandMode::Production => prepare_final_site(&project_root),
     }
 }
@@ -66,11 +66,20 @@ fn prepare_final_site(project_root: &Path) -> io::Result<()> {
     )
 }
 
-fn run_dev(project_root: &Path) -> io::Result<()> {
+fn run_dev(project_root: &Path, port: Option<u16>) -> io::Result<()> {
     prepare_final_site(project_root)?;
 
     let prebuild_root = project_root.join("prebuild");
-    run_pnpm(&prebuild_root, &["exec", "vite", "preview"])
+    let port_argument = port.map(|port| port.to_string());
+    let mut arguments = vec!["exec", "vite", "preview"];
+    if let Some(port_argument) = &port_argument {
+        // --strictPort makes a taken port a hard failure instead of Vite
+        // silently picking another one, which callers that need a
+        // predictable URL (the studio's preview feature) rely on.
+        arguments.extend(["--port", port_argument, "--strictPort"]);
+    }
+
+    run_pnpm(&prebuild_root, &arguments)
 }
 
 fn run_pnpm(working_directory: &Path, arguments: &[&str]) -> io::Result<()> {

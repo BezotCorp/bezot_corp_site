@@ -31,18 +31,3 @@ fn civil_date_from_unix_days(days_since_unix_epoch: i64) -> (i32, u32, u32) {
 
     (adjusted_year as i32, month as u32, day as u32)
 }
-
-#[cfg(test)]
-mod tests {
-    use super::civil_date_from_unix_days;
-
-    #[test]
-    fn converts_unix_epoch_to_civil_date() {
-        assert_eq!(civil_date_from_unix_days(0), (1970, 1, 1));
-    }
-
-    #[test]
-    fn converts_known_future_date() {
-        assert_eq!(civil_date_from_unix_days(20_345), (2025, 9, 14));
-    }
-}

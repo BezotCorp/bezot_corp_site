@@ -8,6 +8,7 @@ use crate::editorial_ai_client::{OllamaModel, PostReview};
 use crate::media_client::MediaAsset;
 use crate::media_task::MediaTask;
 use crate::page::Page;
+use crate::preview_client::PreviewSession;
 use common::{PageEditorState, PostEditorState};
 
 const PAGE_SIZE: usize = 6;
@@ -34,6 +35,8 @@ pub struct StudioState {
     pub ai_reviews: Vec<PostReview>,
     pub media_task: MediaTask,
     pub media_assets: Vec<MediaAsset>,
+    pub preview_starting: bool,
+    pub preview: Option<PreviewSession>,
     pub notice: Option<String>,
     pub error: Option<String>,
 }

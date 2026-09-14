@@ -1,5 +1,7 @@
-use iced::widget::{button, column, container, row, text, text_input};
-use iced::{Color, Element, Fill, Length};
+use iced::{
+    Color, Element, Fill, Length,
+    widget::{button, column, container, row, text, text_input},
+};
 
 use crate::message::Message;
 use crate::styles::{bar_fill_style, bar_track_style, card_style, chip_style, panel_style};

@@ -17,6 +17,8 @@ mod post_reader;
 #[cfg(test)]
 mod post_writer;
 #[cfg(test)]
+mod preview_runner;
+#[cfg(test)]
 mod redirect_writer;
 #[cfg(test)]
 pub(crate) mod support;

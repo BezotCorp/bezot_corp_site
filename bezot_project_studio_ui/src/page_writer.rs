@@ -1,8 +1,6 @@
-use std::io;
-use std::path::Path;
+use std::{io, path::Path};
 
-use common::PageEditorState;
-use common::invalid_data;
+use common::{PageEditorState, invalid_data};
 
 use crate::studio_core_runner::{run_studio_core, run_studio_core_with_stdin, studio_core_failure};
 

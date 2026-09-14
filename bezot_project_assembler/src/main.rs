@@ -12,11 +12,11 @@ mod prebuild_writer;
 mod project_config;
 mod project_execution;
 mod project_file;
+mod project_snapshot;
 mod site_generator;
 mod state_diff;
 mod state_store;
 mod string_operations;
-mod project_snapshot;
 
 use common::CommandMode;
 use std::{env, fmt, io, path::PathBuf, process};
@@ -26,12 +26,16 @@ use project_execution::execute;
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    if args.len() != 3 {
-        eprintln!("usage: bezot_project_assembler <project-root> <dev|production>");
+    if args.len() < 3 {
+        eprintln!("usage: bezot_project_assembler <project-root> <dev|production> [--port <port>]");
         process::exit(1);
     }
     let mode = match CommandMode::parse(args.get(2).map(String::as_str)) {
         Ok(mode) => mode,
+        Err(error) => exit_with_error(error),
+    };
+    let port = match parse_port_argument(&args[3..]) {
+        Ok(port) => port,
         Err(error) => exit_with_error(error),
     };
 
@@ -46,8 +50,22 @@ fn main() {
     };
     report.print_summary();
 
-    if let Err(error) = execute(mode, report.project_root().to_path_buf()) {
+    if let Err(error) = execute(mode, report.project_root().to_path_buf(), port) {
         exit_with_error(error);
+    }
+}
+
+/// Parses an optional `--port <port>` trailing argument, only meaningful for
+/// `dev` (it fixes the port Vite Preview binds to, so a caller that needs a
+/// predictable preview URL doesn't have to parse Vite's own log output).
+fn parse_port_argument(args: &[String]) -> Result<Option<u16>, String> {
+    match args {
+        [] => Ok(None),
+        [flag, value] if flag == "--port" => value
+            .parse::<u16>()
+            .map(Some)
+            .map_err(|_| format!("invalid --port value \"{value}\"")),
+        _ => Err("usage: <project-root> <dev|production> [--port <port>]".to_string()),
     }
 }
 

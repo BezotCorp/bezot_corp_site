@@ -22,11 +22,14 @@ mod page_writer;
 mod post_field;
 mod post_reader;
 mod post_writer;
+mod preview_client;
+mod preview_view;
 mod project_paths;
 mod studio_core_runner;
 mod studio_state;
 mod studio_view;
 mod styles;
+mod task_hint;
 mod vram_fit;
 mod widgets;
 
@@ -35,7 +38,7 @@ mod tests;
 
 use std::{env, io, path::PathBuf};
 
-use common::{PostEditorState, PostLocaleEditor};
+use common::{PostEditorState, PostLocaleEditor, invalid_input};
 use iced::{Result, Task, Theme, application};
 
 use ai_task::AiTask;
@@ -47,10 +50,7 @@ use media_client::MediaAsset;
 use media_task::MediaTask;
 use message::Message;
 use page::Page;
-use page_reader::load_page_editor;
-use page_writer::{delete_page_with_core, save_page_with_core};
-use post_reader::load_post_editor;
-use post_writer::{delete_post_with_core, save_post_with_core};
+use preview_client::PreviewSession;
 use project_paths::resolve_project_root;
 use studio_core_runner::{run_studio_core, studio_core_failure};
 use studio_state::StudioState;
@@ -80,6 +80,8 @@ fn main() -> Result {
             ai_reviews: Vec::new(),
             media_task: MediaTask::default(),
             media_assets: Vec::new(),
+            preview_starting: false,
+            preview: None,
             notice: None,
             error: Some(error.to_string()),
         },
@@ -123,6 +125,8 @@ fn boot_state() -> io::Result<StudioState> {
         ai_reviews: Vec::new(),
         media_task: MediaTask::default(),
         media_assets,
+        preview_starting: false,
+        preview: None,
         notice: None,
         error: None,
     })
@@ -186,8 +190,32 @@ fn update(state: &mut StudioState, message: Message) -> Task<Message> {
             })
         }
         Message::CopyMediaPath(path) => iced::clipboard::write(path),
+        Message::StartPreview => {
+            if let Some(session) = state.preview.take() {
+                preview_client::stop_preview(session.pid);
+            }
+            state.preview_starting = true;
+            state.error = None;
+            state.notice = None;
+            let project_root = state.project_root.clone();
+
+            match state.editor_target {
+                EditorTarget::Post => {
+                    let editor = state.post_editor.clone();
+                    Task::perform(start_post_preview_async(project_root, editor), |result| {
+                        Message::PreviewReady(result)
+                    })
+                }
+                EditorTarget::Page => {
+                    let editor = state.page_editor.clone();
+                    Task::perform(start_page_preview_async(project_root, editor), |result| {
+                        Message::PreviewReady(result)
+                    })
+                }
+            }
+        }
         other => {
-            apply(state, other);
+            Message::apply(state, other);
             Task::none()
         }
     }
@@ -217,6 +245,20 @@ async fn list_media_async(project_root: PathBuf) -> std::result::Result<Vec<Medi
     media_client::list_media(&project_root).map_err(|error| error.to_string())
 }
 
+async fn start_post_preview_async(
+    project_root: PathBuf,
+    editor: PostEditorState,
+) -> std::result::Result<PreviewSession, String> {
+    preview_client::start_post_preview(&project_root, &editor).map_err(|error| error.to_string())
+}
+
+async fn start_page_preview_async(
+    project_root: PathBuf,
+    editor: common::PageEditorState,
+) -> std::result::Result<PreviewSession, String> {
+    preview_client::start_page_preview(&project_root, &editor).map_err(|error| error.to_string())
+}
+
 /// Opens the native file picker off the UI thread, then uploads the chosen
 /// file through studio_core in the same async step — a cancelled dialog
 /// yields `Ok(None)`, never an error.
@@ -234,428 +276,6 @@ async fn pick_and_upload_media_async(
     media_client::upload_media(&project_root, file.path())
         .map(Some)
         .map_err(|error| error.to_string())
-}
-
-fn apply(state: &mut StudioState, message: Message) {
-    match message {
-        Message::GenerateDraft
-        | Message::RunReview
-        | Message::LoadModels
-        | Message::LoadMedia
-        | Message::PickAndUploadMedia
-        | Message::CopyMediaPath(_) => {
-            unreachable!("intercepted in update() before reaching apply()")
-        }
-        Message::AiDraftModelChanged(value) => state.ai_draft_model = value,
-        Message::AiReviewModelChanged(value) => state.ai_review_model = value,
-        Message::AiVramChanged(value) => state.ai_vram_gb = value,
-        Message::AiTopicChanged(value) => state.ai_topic = value,
-        Message::ModelsLoaded(result) => {
-            state.ai_task = AiTask::Idle;
-            match result {
-                Ok(models) => {
-                    state.notice = Some(format!("{} modèle(s) trouvé(s).", models.len()));
-                    state.ai_models = models;
-                }
-                Err(error) => state.error = Some(error),
-            }
-        }
-        Message::DraftGenerated(result) => {
-            state.ai_task = AiTask::Idle;
-            match *result {
-                Ok(editor) => {
-                    state.notice = Some(format!("Brouillon IA créé : {}.", editor.id));
-                    state.post_editor = editor;
-                    state.editor_target = EditorTarget::Post;
-                    state.selected_entry_id = None;
-                    state.current_page = Page::Editor;
-                    if let Ok(entries) = load_content_entries(&state.project_root) {
-                        state.entries = entries;
-                        state.clamp_page_index();
-                    }
-                }
-                Err(error) => state.error = Some(error),
-            }
-        }
-        Message::ReviewCompleted(result) => {
-            state.ai_task = AiTask::Idle;
-            match result {
-                Ok(reviews) => {
-                    state.notice = Some(format!("{} analyse(s) reçue(s).", reviews.len()));
-                    state.ai_reviews = reviews;
-                }
-                Err(error) => state.error = Some(error),
-            }
-        }
-        Message::MediaLoaded(result) => {
-            state.media_task = MediaTask::Idle;
-            match result {
-                Ok(assets) => {
-                    state.notice = Some(format!("{} fichier(s) trouvé(s).", assets.len()));
-                    state.media_assets = assets;
-                }
-                Err(error) => state.error = Some(error),
-            }
-        }
-        Message::MediaUploaded(result) => {
-            state.media_task = MediaTask::Idle;
-            match result {
-                Ok(Some(asset)) => {
-                    state.notice = Some(format!("Fichier envoyé : {}.", asset.public_path));
-                    if let Ok(assets) = media_client::list_media(&state.project_root) {
-                        state.media_assets = assets;
-                    } else {
-                        state.media_assets.push(asset);
-                    }
-                }
-                Ok(None) => {}
-                Err(error) => state.error = Some(error),
-            }
-        }
-        Message::Navigate(page) => state.current_page = page,
-        Message::ShowEditorTarget(target) => {
-            state.editor_target = target;
-            state.selected_entry_id = None;
-            state.confirm_delete = false;
-        }
-        Message::ReloadContent => match load_content_entries(&state.project_root) {
-            Ok(entries) => {
-                state.entries = entries;
-                state.clamp_page_index();
-                state.notice = Some("Contenu rechargé.".to_string());
-                state.error = None;
-            }
-            Err(error) => {
-                state.error = Some(error.to_string());
-            }
-        },
-        Message::SelectEntry(id) => {
-            let selected_kind = state
-                .entries
-                .iter()
-                .find(|entry| entry.id == id)
-                .map(|entry| entry.kind.as_str());
-
-            state.selected_entry_id = Some(id);
-            state.confirm_delete = false;
-            let selected_id = state.selected_entry_id.clone().unwrap_or_default();
-
-            match selected_kind {
-                Some("post") => match load_post_editor(&state.project_root, &selected_id) {
-                    Ok(editor) => {
-                        state.post_editor = editor;
-                        state.editor_target = EditorTarget::Post;
-                        state.notice = Some(format!("Article chargé : {selected_id}."));
-                        state.current_page = Page::Editor;
-                        state.error = None;
-                    }
-                    Err(error) => {
-                        state.error = Some(error.to_string());
-                    }
-                },
-                Some("page") => match load_page_editor(&state.project_root, &selected_id) {
-                    Ok(editor) => {
-                        state.page_editor = editor;
-                        state.editor_target = EditorTarget::Page;
-                        state.notice = Some(format!("Page chargée : {selected_id}."));
-                        state.current_page = Page::Editor;
-                        state.error = None;
-                    }
-                    Err(error) => {
-                        state.error = Some(error.to_string());
-                    }
-                },
-                _ => {
-                    state.notice = Some("Contenu inconnu.".to_string());
-                }
-            }
-        }
-        Message::NewPost => {
-            state.post_editor = Default::default();
-            state.editor_target = EditorTarget::Post;
-            state.notice = Some("Nouveau brouillon d’article prêt.".to_string());
-            state.selected_entry_id = None;
-            state.current_page = Page::Editor;
-            state.confirm_delete = false;
-            state.error = None;
-        }
-        Message::NewPage => {
-            state.page_editor = Default::default();
-            state.editor_target = EditorTarget::Page;
-            state.notice = Some("Nouvelle page prête.".to_string());
-            state.selected_entry_id = None;
-            state.current_page = Page::Editor;
-            state.confirm_delete = false;
-            state.error = None;
-        }
-        Message::PrepareSite => match prepare_site(&state.project_root) {
-            Ok(()) => {
-                state.notice = Some("Site final préparé avec succès.".to_string());
-                state.error = None;
-            }
-            Err(error) => {
-                state.error = Some(error.to_string());
-            }
-        },
-        Message::SearchQueryChanged(value) => {
-            state.search_query = value;
-            state.reset_page();
-        }
-        Message::ShowAllContent => {
-            state.kind_filter = ContentKindFilter::All;
-            state.reset_page();
-        }
-        Message::ShowPages => {
-            state.kind_filter = ContentKindFilter::Pages;
-            state.reset_page();
-        }
-        Message::ShowPosts => {
-            state.kind_filter = ContentKindFilter::Posts;
-            state.reset_page();
-        }
-        Message::PreviousPage => state.previous_page(),
-        Message::NextPage => state.next_page(),
-        Message::MarkDraft => state.post_editor.status = "draft".to_string(),
-        Message::MarkPublished => state.post_editor.status = "published".to_string(),
-        Message::MarkArchived => state.post_editor.status = "archived".to_string(),
-        Message::ApplySeoTemplate => {
-            apply_seo_template(&mut state.post_editor);
-            state.notice = Some("Modèle SEO appliqué.".to_string());
-            state.error = None;
-        }
-        Message::ApplyMonetizedTemplate => {
-            apply_monetized_template(&mut state.post_editor);
-            state.notice = Some("Modèle monétisé appliqué.".to_string());
-            state.error = None;
-        }
-        Message::ClearAffiliateFields => {
-            clear_affiliate_fields(&mut state.post_editor.fr);
-            clear_affiliate_fields(&mut state.post_editor.en);
-            state.notice = Some("Champs affiliation vidés.".to_string());
-            state.error = None;
-        }
-        Message::PostDateChanged(value) => state.post_editor.date = value,
-        Message::PostStatusChanged(value) => state.post_editor.status = value,
-        Message::PostAuthorChanged(value) => state.post_editor.author = value,
-        Message::PostFieldChanged(locale, field, value) => {
-            *post_field::field_mut(locale::locale_mut(&mut state.post_editor, locale), field) =
-                value;
-        }
-        Message::AddParagraph(locale) => {
-            locale::locale_mut(&mut state.post_editor, locale)
-                .paragraphs
-                .push(String::new());
-        }
-        Message::RemoveParagraph(locale, index) => {
-            let paragraphs = &mut locale::locale_mut(&mut state.post_editor, locale).paragraphs;
-            if index < paragraphs.len() {
-                paragraphs.remove(index);
-            }
-        }
-        Message::MoveParagraphUp(locale, index) => {
-            let paragraphs = &mut locale::locale_mut(&mut state.post_editor, locale).paragraphs;
-            if index > 0 && index < paragraphs.len() {
-                paragraphs.swap(index - 1, index);
-            }
-        }
-        Message::MoveParagraphDown(locale, index) => {
-            let paragraphs = &mut locale::locale_mut(&mut state.post_editor, locale).paragraphs;
-            if index + 1 < paragraphs.len() {
-                paragraphs.swap(index, index + 1);
-            }
-        }
-        Message::ParagraphChanged(locale, index, value) => {
-            let paragraphs = &mut locale::locale_mut(&mut state.post_editor, locale).paragraphs;
-            if let Some(paragraph) = paragraphs.get_mut(index) {
-                *paragraph = value;
-            }
-        }
-        Message::SavePost => {
-            let existed_before_save = state.edited_post_exists();
-            match save_post_with_core(&state.project_root, &state.post_editor) {
-                Ok(()) => {
-                    state.notice = Some(save_notice(existed_before_save, &state.post_editor.id));
-                    match load_content_entries(&state.project_root) {
-                        Ok(entries) => {
-                            state.entries = entries;
-                            state.clamp_page_index();
-                            state.error = None;
-                        }
-                        Err(error) => {
-                            state.error =
-                                Some(format!("Impossible de recharger le contenu : {error}"));
-                        }
-                    }
-                }
-                Err(error) => {
-                    state.error = Some(error.to_string());
-                }
-            }
-        }
-        Message::DeletePost => {
-            if !state.confirm_delete {
-                state.confirm_delete = true;
-                state.notice = Some("Clique à nouveau pour confirmer la suppression.".to_string());
-                state.error = None;
-                return;
-            }
-
-            let post_id = state.post_editor.id.clone();
-            state.confirm_delete = false;
-
-            match delete_post_with_core(&state.project_root, &post_id) {
-                Ok(()) => {
-                    state.notice = Some(format!("Article supprimé : {post_id}."));
-                    state.post_editor = Default::default();
-                    state.selected_entry_id = None;
-                    state.current_page = Page::Library;
-                    state.error = None;
-                    if let Ok(entries) = load_content_entries(&state.project_root) {
-                        state.entries = entries;
-                        state.clamp_page_index();
-                    }
-                }
-                Err(error) => {
-                    state.error = Some(error.to_string());
-                }
-            }
-        }
-
-        Message::PageIdChanged(value) => state.page_editor.id = value,
-        Message::PageFieldChanged(locale, field, value) => {
-            *page_field::field_mut(
-                locale::page_locale_mut(&mut state.page_editor, locale),
-                field,
-            ) = value;
-        }
-        Message::MarkPageDraft(locale) => {
-            locale::page_locale_mut(&mut state.page_editor, locale).status = "draft".to_string();
-        }
-        Message::MarkPagePublished(locale) => {
-            locale::page_locale_mut(&mut state.page_editor, locale).status =
-                "published".to_string();
-        }
-        Message::AddPageBlock(locale, kind) => {
-            locale::page_locale_mut(&mut state.page_editor, locale)
-                .blocks
-                .push(kind.new_block());
-        }
-        Message::RemovePageBlock(locale, index) => {
-            let blocks = &mut locale::page_locale_mut(&mut state.page_editor, locale).blocks;
-            if index < blocks.len() {
-                blocks.remove(index);
-            }
-        }
-        Message::MovePageBlockUp(locale, index) => {
-            let blocks = &mut locale::page_locale_mut(&mut state.page_editor, locale).blocks;
-            if index > 0 && index < blocks.len() {
-                blocks.swap(index - 1, index);
-            }
-        }
-        Message::MovePageBlockDown(locale, index) => {
-            let blocks = &mut locale::page_locale_mut(&mut state.page_editor, locale).blocks;
-            if index + 1 < blocks.len() {
-                blocks.swap(index, index + 1);
-            }
-        }
-        Message::PageBlockTextChanged(locale, index, field, value) => {
-            let blocks = &mut locale::page_locale_mut(&mut state.page_editor, locale).blocks;
-            if let Some(block) = blocks.get_mut(index)
-                && let Some(target) = page_block_field::text_field_mut(block, field)
-            {
-                *target = value;
-            }
-        }
-        Message::PageBlockNumberChanged(locale, index, field, value) => {
-            let blocks = &mut locale::page_locale_mut(&mut state.page_editor, locale).blocks;
-            if let Some(block) = blocks.get_mut(index)
-                && let Some(target) = page_block_field::number_field_mut(block, field)
-            {
-                *target = value.trim().parse().ok();
-            }
-        }
-        Message::PageBlockFlagToggled(locale, index, field) => {
-            let blocks = &mut locale::page_locale_mut(&mut state.page_editor, locale).blocks;
-            if let Some(block) = blocks.get_mut(index)
-                && let Some(target) = page_block_field::flag_mut(block, field)
-            {
-                *target = !*target;
-            }
-        }
-        Message::AddCardItem(locale, block_index) => {
-            let blocks = &mut locale::page_locale_mut(&mut state.page_editor, locale).blocks;
-            if let Some(common::PageBlock::CardGrid { items }) = blocks.get_mut(block_index) {
-                items.push(Default::default());
-            }
-        }
-        Message::RemoveCardItem(locale, block_index, item_index) => {
-            let blocks = &mut locale::page_locale_mut(&mut state.page_editor, locale).blocks;
-            if let Some(common::PageBlock::CardGrid { items }) = blocks.get_mut(block_index)
-                && item_index < items.len()
-            {
-                items.remove(item_index);
-            }
-        }
-        Message::CardItemFieldChanged(locale, block_index, item_index, field, value) => {
-            let blocks = &mut locale::page_locale_mut(&mut state.page_editor, locale).blocks;
-            if let Some(common::PageBlock::CardGrid { items }) = blocks.get_mut(block_index)
-                && let Some(item) = items.get_mut(item_index)
-            {
-                *card_item_field::field_mut(item, field) = value;
-            }
-        }
-        Message::SavePage => {
-            let existed_before_save = state.edited_page_exists();
-            match save_page_with_core(&state.project_root, &state.page_editor) {
-                Ok(()) => {
-                    state.notice =
-                        Some(save_page_notice(existed_before_save, &state.page_editor.id));
-                    match load_content_entries(&state.project_root) {
-                        Ok(entries) => {
-                            state.entries = entries;
-                            state.clamp_page_index();
-                            state.error = None;
-                        }
-                        Err(error) => {
-                            state.error =
-                                Some(format!("Impossible de recharger le contenu : {error}"));
-                        }
-                    }
-                }
-                Err(error) => {
-                    state.error = Some(error.to_string());
-                }
-            }
-        }
-        Message::DeletePage => {
-            if !state.confirm_delete {
-                state.confirm_delete = true;
-                state.notice = Some("Clique à nouveau pour confirmer la suppression.".to_string());
-                state.error = None;
-                return;
-            }
-
-            let page_id = state.page_editor.id.clone();
-            state.confirm_delete = false;
-
-            match delete_page_with_core(&state.project_root, &page_id) {
-                Ok(()) => {
-                    state.notice = Some(format!("Page supprimée : {page_id}."));
-                    state.page_editor = Default::default();
-                    state.selected_entry_id = None;
-                    state.current_page = Page::Library;
-                    state.error = None;
-                    if let Ok(entries) = load_content_entries(&state.project_root) {
-                        state.entries = entries;
-                        state.clamp_page_index();
-                    }
-                }
-                Err(error) => {
-                    state.error = Some(error.to_string());
-                }
-            }
-        }
-    }
 }
 
 fn theme(_state: &StudioState) -> Theme {
@@ -708,10 +328,6 @@ fn prepare_site(project_root: &std::path::Path) -> io::Result<()> {
     } else {
         Err(studio_core_failure(&output))
     }
-}
-
-fn invalid_input(message: impl Into<String>) -> io::Error {
-    io::Error::new(io::ErrorKind::InvalidInput, message.into())
 }
 
 fn save_notice(existed_before_save: bool, post_id: &str) -> String {

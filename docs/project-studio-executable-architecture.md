@@ -258,19 +258,38 @@ It may create or update drafts only through stable executable commands. Cron and
 UI-triggered editorial actions must therefore share the same validation and
 write path.
 
-## Known gaps
+## Real draft preview
 
-The following are not implemented yet. They are listed here so new work is not
-built on top of an assumed capability that does not exist.
+Beyond the editors' structural "Aperçu de lecture" panel (title/subtitle/
+paragraphs/blocks in reading order, for a quick proofread), the studio can
+also build the site's real, CSS-styled rendering of an in-progress draft —
+identical to what would actually ship, including unsaved edits.
 
-- **Draft preview is structural, not the site's real rendering.** The
-  editors' "Aperçu de lecture" panel composes title/subtitle/paragraphs/
-  blocks in order so an author can proofread flow before publishing, but it
-  is not the site's actual CSS-styled output. Prerendering excludes
-  unpublished content entirely (see `project-checks.md`), so there is no
-  live URL for a draft even for a human author today — building one would
-  mean assembling an isolated copy of the site with the draft temporarily
-  marked published, which is a larger, separate piece of work.
+`content post preview` / `content page preview` (stdin: the editor state,
+same shape as `save`) do this without ever touching the real, tracked
+content:
+
+1. Copy `project_root` into an isolated temp directory (excluding
+   `node_modules`/`prebuild`/`dist`/`dist-ssr`, which the pipeline
+   regenerates itself). Any leftover copy from a previous preview is removed
+   first, so a preview killed outside the studio leaves at most one stale
+   copy rather than accumulating them.
+2. Save the given editor state into that copy with every locale's status
+   forced to `published`.
+3. Run the same pipeline `production` runs (install, eslint, tsc, both Vite
+   builds, prerender, all four check scripts), then start Vite Preview on a
+   fixed port (`4174`, via `--port --strictPort`) so the caller can build the
+   preview URL deterministically instead of parsing Vite's log output.
+
+`bezot_project_studio_ui`'s "Aperçu réel" panel (in both the post and page
+editor) calls this as a long-lived background process — not through
+`run_studio_core`'s wait-for-exit helper, since the preview server blocks
+until stopped — started in its own process group (`process_group(0)`) so
+"Arrêter l'aperçu" can kill the whole tree (studio_core, the assembler,
+pnpm, Vite) with one `kill(2)` call to the negative pid, not just the
+immediate child. The panel polls the fixed port until it accepts
+connections before offering the FR/EN links, since the full pipeline this
+reuses takes real time (measured at ~15-30s with a warm cache).
 
 ## Rationale
 

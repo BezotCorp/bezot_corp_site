@@ -8,6 +8,7 @@ use crate::locale::Locale;
 use crate::message::Message;
 use crate::page_block_field::PageBlockField;
 use crate::page_field::PageField;
+use crate::preview_view::real_preview_panel;
 use crate::studio_state::StudioState;
 use crate::styles::accent_panel_style;
 use crate::widgets::{delete_button, labeled_input, panel, section_title, status_chip};
@@ -24,6 +25,7 @@ pub(crate) fn page_workspace_view(state: &StudioState) -> Element<'_, Message> {
         column![
             section_title("Page"),
             current_page_banner(state, save_label),
+            real_preview_panel(state),
             page_locale_view("Version française", &editor.fr, Locale::French),
             page_locale_view("Version anglaise", &editor.en, Locale::English),
         ]

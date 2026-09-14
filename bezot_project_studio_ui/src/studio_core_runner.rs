@@ -1,8 +1,10 @@
-use std::env;
-use std::ffi::OsString;
-use std::io::{self, Write};
-use std::path::PathBuf;
-use std::process::{Command, Output, Stdio};
+use std::{
+    env,
+    ffi::OsString,
+    io::{self, Write},
+    path::{Path, PathBuf},
+    process::{Command, Output, Stdio},
+};
 
 use crate::project_paths::studio_core_manifest_path;
 
@@ -29,6 +31,16 @@ pub(crate) fn run_studio_core_with_stdin(
     drop(stdin);
 
     child.wait_with_output()
+}
+
+/// Builds (but does not run) a studio_core invocation for `content <args>`
+/// against `project_root`, for callers that need to spawn it themselves —
+/// e.g. the preview feature, which starts a long-lived server rather than
+/// waiting for the process to exit.
+pub(crate) fn studio_core_process(project_root: &Path, args: &[OsString]) -> Command {
+    let mut full_args = vec![project_root.as_os_str().to_owned()];
+    full_args.extend(args.iter().cloned());
+    studio_core_command(&full_args)
 }
 
 fn studio_core_command(args: &[OsString]) -> Command {

@@ -19,6 +19,7 @@ mod post_deleter;
 mod post_document;
 mod post_reader;
 mod post_writer;
+mod preview_runner;
 mod process_runner;
 mod project_paths;
 mod redirect_writer;
