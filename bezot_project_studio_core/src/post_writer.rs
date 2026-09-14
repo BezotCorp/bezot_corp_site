@@ -6,15 +6,30 @@ use common::{PostEditorState, invalid_data, invalid_input, read_json};
 use serde_json::Value;
 
 use crate::post_document::PostDocument;
+use crate::post_reader::load_post_editor;
+use crate::redirect_writer::record_slug_redirect;
 
 pub fn save_post(project_root: &Path, editor: &PostEditorState) -> io::Result<()> {
     validate_editor(editor)?;
+    record_slug_redirects_if_changed(project_root, editor)?;
 
     let content_dir = project_root.join("content");
     let post_relative_path = format!("posts/{}/{}.json", editor.date, editor.id);
     let post_path = content_dir.join("blog").join(&post_relative_path);
     write_post_document(&post_path, editor)?;
     update_blog_index(&content_dir.join("blog/index.json"), &post_relative_path)
+}
+
+fn record_slug_redirects_if_changed(
+    project_root: &Path,
+    editor: &PostEditorState,
+) -> io::Result<()> {
+    let Ok(previous) = load_post_editor(project_root, &editor.id) else {
+        return Ok(());
+    };
+
+    record_slug_redirect(project_root, "fr-fr", &previous.fr.slug, &editor.fr.slug)?;
+    record_slug_redirect(project_root, "en-us", &previous.en.slug, &editor.en.slug)
 }
 
 fn validate_editor(editor: &PostEditorState) -> io::Result<()> {

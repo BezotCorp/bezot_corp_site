@@ -51,6 +51,14 @@ There is no `content page` command yet: page content (as opposed to blog posts) 
 be created or edited through `bezot_project_studio_core` or `bezot_project_studio_ui`.
 See [Known gaps](#known-gaps).
 
+`content post save` compares the post's previously stored slug (per locale)
+against the incoming one before writing anything. If a slug changed, it
+appends a 301 entry from the old path to the new one to
+`site/content/redirects.json` (skipped if an entry for that old path already
+exists, so a manually curated redirect is never overwritten). This makes
+slug changes safe by default: no separate step is required to avoid turning
+a published URL into a 404.
+
 ### `bezot_project_studio_ui`
 
 `bezot_project_studio_ui` is the Iced studio executable.
@@ -184,14 +192,6 @@ built on top of an assumed capability that does not exist.
   `site/content/pages/<id>/index.json` and its locale files directly, which
   the UI boundary above forbids for any content a command already covers —
   pages are the one content kind with no covering command yet.
-- **No redirect automation on slug change.** `content post save` persists
-  whatever slug is in the editor; it does not compare it against the
-  previously stored slug and never touches `site/content/redirects.json`.
-  Canonical URLs are computed at build time from the current slug
-  (`site/src/seo.ts`, `site/src/templates/PageTemplate.tsx`), so changing a
-  published slug without manually adding a `redirects.json` entry silently
-  turns the old URL into a 404 with no redirect and no warning from any
-  check in [project-checks.md](./project-checks.md).
 - **No content deletion.** No command or UI action removes a page or post;
   only build output cleanup exists (`bezot_project_assembler/src/prebuild_writer.rs`).
 - **No media/image handling in the studio.** Images referenced by content

@@ -12,6 +12,7 @@ mod post_reader;
 mod post_writer;
 mod process_runner;
 mod project_paths;
+mod redirect_writer;
 
 #[cfg(test)]
 mod tests;
