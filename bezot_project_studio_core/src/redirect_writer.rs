@@ -7,6 +7,12 @@ use serde_json::Value;
 
 /// Records a 301 redirect from a post's previous slug to its new one, so a
 /// slug edited in the studio never turns a published URL into a silent 404.
+///
+/// Every slug a post has ever had must keep redirecting straight to its
+/// *current* slug, even across several edits. So this also rewrites any
+/// existing entry that pointed at the old slug to point at the new one
+/// instead, collapsing what would otherwise become a multi-hop redirect
+/// chain (old -> older -> current) into single hops (old -> current).
 pub fn record_slug_redirect(
     project_root: &Path,
     locale: &str,
@@ -25,117 +31,38 @@ pub fn record_slug_redirect(
 
     let from = format!("/{locale}/{old_slug}");
     let to = format!("/{locale}/{new_slug}");
+    let mut already_recorded = false;
 
-    let already_recorded = entries
-        .iter()
-        .any(|entry| entry.get("from").and_then(Value::as_str) == Some(from.as_str()));
+    for entry in entries.iter_mut() {
+        let Some(object) = entry.as_object_mut() else {
+            continue;
+        };
 
-    if already_recorded {
-        return Ok(());
+        if object.get("to").and_then(Value::as_str) == Some(from.as_str()) {
+            object.insert("to".to_string(), Value::String(to.clone()));
+        }
+
+        if object.get("from").and_then(Value::as_str) == Some(from.as_str()) {
+            object.insert("to".to_string(), Value::String(to.clone()));
+            already_recorded = true;
+        }
     }
 
-    entries.push(serde_json::json!({
-        "from": from,
-        "to": to,
-        "status": 301,
-    }));
+    if !already_recorded {
+        entries.push(serde_json::json!({
+            "from": from,
+            "to": to,
+            "status": 301,
+        }));
+    }
+
+    // A slug reverted to a previous value can leave a self-redirect behind
+    // (e.g. A -> B then B -> A collapses the A -> B entry into A -> A).
+    entries.retain(|entry| entry.get("from") != entry.get("to"));
 
     let source = format!(
         "{}\n",
         serde_json::to_string_pretty(&redirects).map_err(invalid_data)?
     );
     fs::write(redirects_path, source)
-}
-
-#[cfg(test)]
-mod tests {
-    use std::path::PathBuf;
-    use std::time::{SystemTime, UNIX_EPOCH};
-
-    use super::*;
-
-    #[test]
-    fn records_a_redirect_when_the_slug_changes() {
-        let project_root = temporary_project_root();
-        let content_dir = project_root.join("content");
-        fs::create_dir_all(&content_dir).unwrap();
-        fs::write(content_dir.join("redirects.json"), "[]\n").unwrap();
-
-        record_slug_redirect(
-            &project_root,
-            "fr-fr",
-            "blog/ancien-slug",
-            "blog/nouveau-slug",
-        )
-        .unwrap();
-
-        let redirects = read_json(&content_dir.join("redirects.json")).unwrap();
-        let entries = redirects.as_array().unwrap();
-        assert_eq!(entries.len(), 1);
-        assert_eq!(
-            entries[0].get("from").and_then(Value::as_str),
-            Some("/fr-fr/blog/ancien-slug")
-        );
-        assert_eq!(
-            entries[0].get("to").and_then(Value::as_str),
-            Some("/fr-fr/blog/nouveau-slug")
-        );
-        assert_eq!(entries[0].get("status").and_then(Value::as_u64), Some(301));
-
-        fs::remove_dir_all(project_root).unwrap();
-    }
-
-    #[test]
-    fn does_not_duplicate_an_existing_redirect() {
-        let project_root = temporary_project_root();
-        let content_dir = project_root.join("content");
-        fs::create_dir_all(&content_dir).unwrap();
-        fs::write(
-            content_dir.join("redirects.json"),
-            r#"[{"from":"/fr-fr/blog/ancien-slug","to":"/fr-fr/blog/nouveau-slug","status":301}]
-"#,
-        )
-        .unwrap();
-
-        record_slug_redirect(
-            &project_root,
-            "fr-fr",
-            "blog/ancien-slug",
-            "blog/autre-slug",
-        )
-        .unwrap();
-
-        let redirects = read_json(&content_dir.join("redirects.json")).unwrap();
-        assert_eq!(redirects.as_array().unwrap().len(), 1);
-
-        fs::remove_dir_all(project_root).unwrap();
-    }
-
-    #[test]
-    fn does_nothing_when_the_slug_is_unchanged() {
-        let project_root = temporary_project_root();
-        let content_dir = project_root.join("content");
-        fs::create_dir_all(&content_dir).unwrap();
-        fs::write(content_dir.join("redirects.json"), "[]\n").unwrap();
-
-        record_slug_redirect(&project_root, "fr-fr", "blog/meme-slug", "blog/meme-slug").unwrap();
-
-        let redirects = read_json(&content_dir.join("redirects.json")).unwrap();
-        assert!(redirects.as_array().unwrap().is_empty());
-
-        fs::remove_dir_all(project_root).unwrap();
-    }
-
-    fn temporary_project_root() -> PathBuf {
-        let stamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
-
-        std::env::temp_dir().join(format!(
-            "bezot_project_studio_core_redirect_writer_test_{}_{}",
-            std::process::id(),
-            stamp
-        ))
-    }
 }

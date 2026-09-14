@@ -2,3 +2,11 @@
 mod command_mode;
 #[cfg(test)]
 mod output_format;
+#[cfg(test)]
+mod post_reader;
+#[cfg(test)]
+mod post_writer;
+#[cfg(test)]
+mod redirect_writer;
+#[cfg(test)]
+pub(crate) mod support;
