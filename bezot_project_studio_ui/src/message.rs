@@ -11,15 +11,15 @@ use crate::page::Page;
 use crate::page_block_field::{self, PageBlockField};
 use crate::page_field::{self, PageField};
 use crate::page_reader::load_page_editor;
-use crate::page_writer::{delete_page_with_core, save_page_with_core};
+use crate::page_writer::delete_page_with_core;
 use crate::post_field::{self, PostField};
 use crate::post_reader::load_post_editor;
-use crate::post_writer::{delete_post_with_core, save_post_with_core};
+use crate::post_writer::delete_post_with_core;
 use crate::preview_client::PreviewSession;
 use crate::studio_state::StudioState;
 use crate::{
     apply_monetized_template, apply_seo_template, clear_affiliate_fields, prepare_site,
-    preview_client, save_notice, save_page_notice,
+    preview_client,
 };
 use common::{PageBlockKind, PostEditorState};
 
@@ -31,6 +31,7 @@ pub(crate) enum Message {
     SelectEntry(String),
     NewPost,
     SavePost,
+    PostSaved(Result<String, String>),
     PrepareSite,
     SearchQueryChanged(String),
     ShowAllContent,
@@ -57,6 +58,7 @@ pub(crate) enum Message {
 
     NewPage,
     SavePage,
+    PageSaved(Result<String, String>),
     DeletePage,
     PageIdChanged(String),
     PageFieldChanged(Locale, PageField, String),
@@ -105,7 +107,9 @@ impl Message {
             | Self::LoadMedia
             | Self::PickAndUploadMedia
             | Self::CopyMediaPath(_)
-            | Self::StartPreview => {
+            | Self::StartPreview
+            | Self::SavePost
+            | Self::SavePage => {
                 unreachable!("intercepted in update() before reaching apply()")
             }
             Self::AiDraftModelChanged(value) => state.ai_draft_model = value,
@@ -353,12 +357,11 @@ impl Message {
                     *paragraph = value;
                 }
             }
-            Self::SavePost => {
-                let existed_before_save = state.edited_post_exists();
-                match save_post_with_core(&state.project_root, &state.post_editor) {
-                    Ok(()) => {
-                        state.notice =
-                            Some(save_notice(existed_before_save, &state.post_editor.id));
+            Self::PostSaved(result) => {
+                state.saving = false;
+                match result {
+                    Ok(notice) => {
+                        state.notice = Some(notice);
                         match load_content_entries(&state.project_root) {
                             Ok(entries) => {
                                 state.entries = entries;
@@ -372,7 +375,7 @@ impl Message {
                         }
                     }
                     Err(error) => {
-                        state.error = Some(error.to_string());
+                        state.error = Some(error);
                     }
                 }
             }
@@ -490,12 +493,11 @@ impl Message {
                     *card_item_field::CardItemField::field_mut(item, field) = value;
                 }
             }
-            Self::SavePage => {
-                let existed_before_save = state.edited_page_exists();
-                match save_page_with_core(&state.project_root, &state.page_editor) {
-                    Ok(()) => {
-                        state.notice =
-                            Some(save_page_notice(existed_before_save, &state.page_editor.id));
+            Self::PageSaved(result) => {
+                state.saving = false;
+                match result {
+                    Ok(notice) => {
+                        state.notice = Some(notice);
                         match load_content_entries(&state.project_root) {
                             Ok(entries) => {
                                 state.entries = entries;
@@ -509,7 +511,7 @@ impl Message {
                         }
                     }
                     Err(error) => {
-                        state.error = Some(error.to_string());
+                        state.error = Some(error);
                     }
                 }
             }

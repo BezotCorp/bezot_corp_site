@@ -77,6 +77,39 @@ pub(crate) fn delete_button(
     button(label).on_press(message).into()
 }
 
+/// A "published" save pushes and merges a real Pull Request (see
+/// `bezot_project_studio_core::git_publisher`), so the label makes that
+/// explicit rather than reading like an ordinary, instant local save.
+/// `existing_label`/`new_label` carry the entry-specific wording ("l'article
+/// existant" vs "la page existante", etc.).
+pub(crate) fn save_button_label(
+    saving: bool,
+    will_publish: bool,
+    updating_existing: bool,
+    existing_label: &str,
+    new_label: &str,
+) -> String {
+    if saving {
+        return if will_publish {
+            "Publication en cours (peut prendre une minute)…".to_string()
+        } else {
+            "Enregistrement…".to_string()
+        };
+    }
+
+    let base = if updating_existing {
+        existing_label
+    } else {
+        new_label
+    };
+
+    if will_publish {
+        format!("{base} et publier sur le site")
+    } else {
+        base.to_string()
+    }
+}
+
 const STAT_BAR_TRACK_WIDTH: f32 = 220.0;
 const STAT_BAR_HEIGHT: f32 = 10.0;
 

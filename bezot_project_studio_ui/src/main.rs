@@ -50,6 +50,8 @@ use media_client::MediaAsset;
 use media_task::MediaTask;
 use message::Message;
 use page::Page;
+use page_writer::save_page_with_core;
+use post_writer::save_post_with_core;
 use preview_client::PreviewSession;
 use project_paths::resolve_project_root;
 use studio_core_runner::{run_studio_core, studio_core_failure};
@@ -82,6 +84,7 @@ fn main() -> Result {
             media_assets: Vec::new(),
             preview_starting: false,
             preview: None,
+            saving: false,
             notice: None,
             error: Some(error.to_string()),
         },
@@ -127,6 +130,7 @@ fn boot_state() -> io::Result<StudioState> {
         media_assets,
         preview_starting: false,
         preview: None,
+        saving: false,
         notice: None,
         error: None,
     })
@@ -190,6 +194,30 @@ fn update(state: &mut StudioState, message: Message) -> Task<Message> {
             })
         }
         Message::CopyMediaPath(path) => iced::clipboard::write(path),
+        Message::SavePost => {
+            state.saving = true;
+            state.error = None;
+            state.notice = None;
+            let existed_before_save = state.edited_post_exists();
+            let project_root = state.project_root.clone();
+            let editor = state.post_editor.clone();
+            Task::perform(
+                save_post_async(project_root, editor, existed_before_save),
+                Message::PostSaved,
+            )
+        }
+        Message::SavePage => {
+            state.saving = true;
+            state.error = None;
+            state.notice = None;
+            let existed_before_save = state.edited_page_exists();
+            let project_root = state.project_root.clone();
+            let editor = state.page_editor.clone();
+            Task::perform(
+                save_page_async(project_root, editor, existed_before_save),
+                Message::PageSaved,
+            )
+        }
         Message::StartPreview => {
             if let Some(session) = state.preview.take() {
                 preview_client::stop_preview(session.pid);
@@ -243,6 +271,30 @@ async fn list_models_async(project_root: PathBuf) -> std::result::Result<Vec<Oll
 
 async fn list_media_async(project_root: PathBuf) -> std::result::Result<Vec<MediaAsset>, String> {
     media_client::list_media(&project_root).map_err(|error| error.to_string())
+}
+
+/// Publishing a "published" entry can push, open, and merge a real Pull
+/// Request (see `bezot_project_studio_core::git_publisher`), so this can
+/// take real time — it must run off the UI thread like the other network-
+/// bound actions here.
+async fn save_post_async(
+    project_root: PathBuf,
+    editor: PostEditorState,
+    existed_before_save: bool,
+) -> std::result::Result<String, String> {
+    save_post_with_core(&project_root, &editor)
+        .map(|()| save_notice(existed_before_save, &editor.id))
+        .map_err(|error| error.to_string())
+}
+
+async fn save_page_async(
+    project_root: PathBuf,
+    editor: common::PageEditorState,
+    existed_before_save: bool,
+) -> std::result::Result<String, String> {
+    save_page_with_core(&project_root, &editor)
+        .map(|()| save_page_notice(existed_before_save, &editor.id))
+        .map_err(|error| error.to_string())
 }
 
 async fn start_post_preview_async(

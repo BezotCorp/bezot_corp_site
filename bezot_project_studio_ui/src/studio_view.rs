@@ -22,7 +22,8 @@ use crate::styles::{
     shell_style, success_color, warning_color,
 };
 use crate::widgets::{
-    card, checklist_line, delete_button, labeled_input, panel, section_title, stat_bar, status_chip,
+    card, checklist_line, delete_button, labeled_input, panel, save_button_label, section_title,
+    stat_bar, status_chip,
 };
 
 pub(crate) fn view(state: &StudioState) -> Element<'_, Message> {
@@ -432,11 +433,13 @@ fn library_filter_card(
 fn post_workspace_view(state: &StudioState) -> Element<'_, Message> {
     let editor = &state.post_editor;
     let report = PostQualityReport::analyze(editor);
-    let save_label = if state.edited_post_exists() {
-        "Mettre à jour l’article existant"
-    } else {
-        "Enregistrer ce nouveau brouillon"
-    };
+    let save_label = save_button_label(
+        state.saving,
+        editor.status == "published",
+        state.edited_post_exists(),
+        "Mettre à jour l’article existant",
+        "Enregistrer ce nouveau brouillon",
+    );
 
     container(
         column![
@@ -474,7 +477,7 @@ fn post_workspace_view(state: &StudioState) -> Element<'_, Message> {
     .into()
 }
 
-fn current_article_banner<'a>(state: &'a StudioState, save_label: &'a str) -> Element<'a, Message> {
+fn current_article_banner<'a>(state: &'a StudioState, save_label: String) -> Element<'a, Message> {
     let selected = state
         .selected_entry_id
         .as_deref()
@@ -492,7 +495,8 @@ fn current_article_banner<'a>(state: &'a StudioState, save_label: &'a str) -> El
             text(format!("Sélection bibliothèque : {selected}")).size(13),
             row![
                 button("Nouveau brouillon").on_press(Message::NewPost),
-                button(save_label).on_press(Message::SavePost),
+                button(text(save_label))
+                    .on_press_maybe((!state.saving).then_some(Message::SavePost)),
                 delete_button(
                     state.edited_post_exists(),
                     state.confirm_delete,
