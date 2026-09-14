@@ -1,10 +1,63 @@
 use std::io;
 
 use common::invalid_data;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 const OLLAMA_GENERATE_ENDPOINT: &str = "http://localhost:11434/api/generate";
+const OLLAMA_TAGS_ENDPOINT: &str = "http://localhost:11434/api/tags";
+
+/// A model already pulled locally (`ollama list`), as reported by Ollama's
+/// `/api/tags` endpoint. `parameter_size` is surfaced so a caller can show
+/// the operator roughly how much VRAM a model needs before they pick one.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct OllamaModel {
+    pub name: String,
+    #[serde(default)]
+    pub parameter_size: String,
+}
+
+/// Lists every model already pulled locally. Never contacts a hosted API.
+pub fn list_models() -> io::Result<Vec<OllamaModel>> {
+    let response = ureq::get(OLLAMA_TAGS_ENDPOINT).call().map_err(tags_error)?;
+    let body: OllamaTagsResponse = response.into_json().map_err(invalid_data)?;
+
+    Ok(body
+        .models
+        .into_iter()
+        .map(|entry| OllamaModel {
+            name: entry.name,
+            parameter_size: entry
+                .details
+                .map(|details| details.parameter_size)
+                .unwrap_or_default(),
+        })
+        .collect())
+}
+
+#[derive(Debug, Deserialize)]
+struct OllamaTagsResponse {
+    models: Vec<OllamaTagsModel>,
+}
+
+#[derive(Debug, Deserialize)]
+struct OllamaTagsModel {
+    name: String,
+    #[serde(default)]
+    details: Option<OllamaTagsModelDetails>,
+}
+
+#[derive(Debug, Deserialize)]
+struct OllamaTagsModelDetails {
+    #[serde(default)]
+    parameter_size: String,
+}
+
+fn tags_error(error: ureq::Error) -> io::Error {
+    io::Error::other(format!(
+        "could not reach Ollama at {OLLAMA_TAGS_ENDPOINT} (is `ollama serve` running?): {error}"
+    ))
+}
 
 /// Sends a prompt to a local Ollama server and parses the model's reply as
 /// JSON. Ollama's `format: "json"` option guarantees syntactically valid

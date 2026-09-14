@@ -1,6 +1,5 @@
 use common::invalid_data;
-use std::io;
-use std::path::Path;
+use std::{io, path::Path};
 
 use common::{PostEditorState, new_uuid, today_yyyy_mm_dd};
 use serde::Deserialize;

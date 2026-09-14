@@ -1,8 +1,8 @@
 use iced::Element;
-use iced::widget::{button, column, row, text};
+use iced::widget::{button, column, pick_list, row, text};
 
 use crate::ai_task::AiTask;
-use crate::editorial_ai_client::PostReview;
+use crate::editorial_ai_client::{OllamaModel, PostReview};
 use crate::message::Message;
 use crate::studio_state::StudioState;
 use crate::widgets::{labeled_input, panel, section_title, status_chip};
@@ -19,18 +19,37 @@ pub(crate) fn ai_page_view(state: &StudioState) -> Element<'_, Message> {
 }
 
 fn settings_panel(state: &StudioState) -> Element<'_, Message> {
+    let loading_models = state.ai_task == AiTask::LoadingModels;
+    let load_models_label = if loading_models {
+        "Chargement…"
+    } else if state.ai_models.is_empty() {
+        "Charger les modèles"
+    } else {
+        "Actualiser la liste"
+    };
+    let selected = state
+        .ai_models
+        .iter()
+        .find(|model| model.name == state.ai_model)
+        .cloned();
+
     panel(
         column![
-            text("Le modèle doit déjà être disponible localement (`ollama list`).").size(12),
+            text("Modèles déjà installés localement (`ollama list`) — aucun n’est choisi par défaut : la taille adaptée dépend de ta VRAM disponible.").size(12),
             row![
-                labeled_input("Modèle Ollama", &state.ai_model, Message::AiModelChanged),
-                labeled_input(
-                    "Sujet du brouillon",
-                    &state.ai_topic,
-                    Message::AiTopicChanged
-                ),
+                pick_list(state.ai_models.as_slice(), selected, |model: OllamaModel| {
+                    Message::AiModelChanged(model.name)
+                })
+                .placeholder("Choisir un modèle…"),
+                button(load_models_label)
+                    .on_press_maybe((!state.ai_task.is_busy()).then_some(Message::LoadModels)),
             ]
             .spacing(10),
+            labeled_input(
+                "Sujet du brouillon",
+                &state.ai_topic,
+                Message::AiTopicChanged
+            ),
         ]
         .spacing(8),
     )

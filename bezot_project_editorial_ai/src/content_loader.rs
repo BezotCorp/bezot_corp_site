@@ -1,7 +1,5 @@
 use common::invalid_data;
-use std::io;
-use std::path::Path;
-use std::process::Command;
+use std::{io, path::Path, process::Command};
 
 use crate::content_entry::ContentEntry;
 use crate::project_paths::studio_core_manifest_path;

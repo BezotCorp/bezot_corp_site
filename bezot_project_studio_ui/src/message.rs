@@ -1,6 +1,6 @@
 use crate::card_item_field::CardItemField;
 use crate::editor_target::EditorTarget;
-use crate::editorial_ai_client::PostReview;
+use crate::editorial_ai_client::{OllamaModel, PostReview};
 use crate::locale::Locale;
 use crate::page::Page;
 use crate::page_block_field::PageBlockField;
@@ -53,6 +53,8 @@ pub(crate) enum Message {
 
     AiModelChanged(String),
     AiTopicChanged(String),
+    LoadModels,
+    ModelsLoaded(Result<Vec<OllamaModel>, String>),
     GenerateDraft,
     DraftGenerated(Box<Result<PostEditorState, String>>),
     RunReview,

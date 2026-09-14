@@ -1,6 +1,8 @@
-use std::io::{self, Write};
-use std::path::Path;
-use std::process::{Command, Stdio};
+use std::{
+    io::{self, Write},
+    path::Path,
+    process::{Command, Stdio},
+};
 
 use common::{PostEditorState, invalid_data};
 

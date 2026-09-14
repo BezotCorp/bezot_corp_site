@@ -4,7 +4,7 @@ use crate::ai_task::AiTask;
 use crate::content_entry::ContentEntry;
 use crate::content_kind_filter::ContentKindFilter;
 use crate::editor_target::EditorTarget;
-use crate::editorial_ai_client::PostReview;
+use crate::editorial_ai_client::{OllamaModel, PostReview};
 use crate::page::Page;
 use common::{PageEditorState, PostEditorState};
 
@@ -25,6 +25,7 @@ pub struct StudioState {
     pub ai_model: String,
     pub ai_topic: String,
     pub ai_task: AiTask,
+    pub ai_models: Vec<OllamaModel>,
     pub ai_reviews: Vec<PostReview>,
     pub notice: Option<String>,
     pub error: Option<String>,

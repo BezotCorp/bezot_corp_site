@@ -1,5 +1,4 @@
-use std::io;
-use std::path::Path;
+use std::{io, path::Path};
 
 use common::invalid_data;
 use serde::{Deserialize, Serialize};

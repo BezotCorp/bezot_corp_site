@@ -38,7 +38,7 @@ use ai_task::AiTask;
 use content_kind_filter::ContentKindFilter;
 use content_loader::load_content_entries;
 use editor_target::EditorTarget;
-use editorial_ai_client::PostReview;
+use editorial_ai_client::{OllamaModel, PostReview};
 use message::Message;
 use page::Page;
 use page_reader::load_page_editor;
@@ -67,6 +67,7 @@ fn main() -> Result {
             ai_model: String::new(),
             ai_topic: String::new(),
             ai_task: AiTask::default(),
+            ai_models: Vec::new(),
             ai_reviews: Vec::new(),
             notice: None,
             error: Some(error.to_string()),
@@ -99,6 +100,7 @@ fn boot_state() -> io::Result<StudioState> {
         ai_model: String::new(),
         ai_topic: String::new(),
         ai_task: AiTask::default(),
+        ai_models: Vec::new(),
         ai_reviews: Vec::new(),
         notice: None,
         error: None,
@@ -139,6 +141,13 @@ fn update(state: &mut StudioState, message: Message) -> Task<Message> {
                 Message::ReviewCompleted,
             )
         }
+        Message::LoadModels => {
+            state.ai_task = AiTask::LoadingModels;
+            state.error = None;
+            state.notice = None;
+            let project_root = state.project_root.clone();
+            Task::perform(list_models_async(project_root), Message::ModelsLoaded)
+        }
         other => {
             apply(state, other);
             Task::none()
@@ -162,13 +171,27 @@ async fn run_review_async(
     editorial_ai_client::run_review(&project_root, &model).map_err(|error| error.to_string())
 }
 
+async fn list_models_async(project_root: PathBuf) -> std::result::Result<Vec<OllamaModel>, String> {
+    editorial_ai_client::list_models(&project_root).map_err(|error| error.to_string())
+}
+
 fn apply(state: &mut StudioState, message: Message) {
     match message {
-        Message::GenerateDraft | Message::RunReview => {
+        Message::GenerateDraft | Message::RunReview | Message::LoadModels => {
             unreachable!("intercepted in update() before reaching apply()")
         }
         Message::AiModelChanged(value) => state.ai_model = value,
         Message::AiTopicChanged(value) => state.ai_topic = value,
+        Message::ModelsLoaded(result) => {
+            state.ai_task = AiTask::Idle;
+            match result {
+                Ok(models) => {
+                    state.notice = Some(format!("{} modèle(s) trouvé(s).", models.len()));
+                    state.ai_models = models;
+                }
+                Err(error) => state.error = Some(error),
+            }
+        }
         Message::DraftGenerated(result) => {
             state.ai_task = AiTask::Idle;
             match *result {

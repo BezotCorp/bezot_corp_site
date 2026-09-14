@@ -2,6 +2,7 @@
 pub(crate) enum AiTask {
     #[default]
     Idle,
+    LoadingModels,
     GeneratingDraft,
     RunningReview,
 }

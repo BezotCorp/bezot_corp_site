@@ -11,14 +11,13 @@ mod project_paths;
 #[cfg(test)]
 mod tests;
 
-use std::env;
-use std::io;
-use std::process::ExitCode;
+use std::{env, io, process::ExitCode};
 
 use common::invalid_data;
 use draft_generator::generate_draft;
 use editorial_audit::audit_editorial_content;
 use editorial_review::review_editorial_content;
+use ollama_client::list_models;
 use project_paths::resolve_project_root;
 
 fn main() -> ExitCode {
@@ -59,8 +58,16 @@ fn run() -> io::Result<()> {
             let format = optional_option(options, "--format").unwrap_or_else(|| "text".to_string());
             review_editorial_content(&project_root, &model, &format)
         }
+        "models" => {
+            let models = list_models()?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&models).map_err(invalid_data)?
+            );
+            Ok(())
+        }
         value => Err(invalid_input(format!(
-            "unknown command \"{value}\"; expected audit, draft, or review"
+            "unknown command \"{value}\"; expected audit, draft, review, or models"
         ))),
     }
 }
@@ -82,7 +89,8 @@ fn usage_error() -> io::Error {
     invalid_input(
         "usage: bezot_project_editorial_ai <project-root> audit \
 | draft --model <name> --topic <topic> \
-| review --model <name>",
+| review --model <name> \
+| models",
     )
 }
 
