@@ -6,6 +6,7 @@ mod content_media_command;
 mod content_page_command;
 mod content_post_command;
 mod content_reader;
+mod git_publisher;
 mod gone_route_writer;
 mod launcher;
 mod localized_content_summary;

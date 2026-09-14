@@ -33,7 +33,14 @@ fn save_page_from_stdin(project_root: &Path) -> io::Result<()> {
     let mut source = String::new();
     io::stdin().read_to_string(&mut source)?;
     let editor = serde_json::from_str::<PageEditorState>(&source).map_err(invalid_data)?;
-    save_page(project_root, &editor)
+    save_page(project_root, &editor)?;
+
+    if editor.fr.status == "published" || editor.en.status == "published" {
+        let summary = format!("chore: publish \"{}\"", editor.fr.title);
+        crate::git_publisher::publish_content_change(project_root, &editor.id, &summary)?;
+    }
+
+    Ok(())
 }
 
 /// Same isolation as `content post preview`: an isolated copy, both locales

@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod command_mode;
 #[cfg(test)]
+mod git_publisher;
+#[cfg(test)]
 mod media_asset;
 #[cfg(test)]
 mod output_format;
