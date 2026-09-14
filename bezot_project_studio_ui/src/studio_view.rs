@@ -24,10 +24,15 @@ pub(crate) fn view(state: &StudioState) -> Element<'_, Message> {
     let page_content = match state.current_page {
         Page::Dashboard => dashboard_page_view(state),
         Page::Library => content_sidebar_view(state),
-        Page::Editor => match state.editor_target {
-            EditorTarget::Post => post_workspace_view(state),
-            EditorTarget::Page => page_workspace_view(state),
-        },
+        Page::Editor => column![
+            editor_target_toggle(state.editor_target),
+            match state.editor_target {
+                EditorTarget::Post => post_workspace_view(state),
+                EditorTarget::Page => page_workspace_view(state),
+            },
+        ]
+        .spacing(14)
+        .into(),
         Page::SiteTools => site_tools_page_view(state),
     };
 
@@ -71,6 +76,28 @@ fn nav_view(current_page: Page) -> Element<'static, Message> {
     }
 
     card(items)
+}
+
+fn editor_target_toggle(current: EditorTarget) -> Element<'static, Message> {
+    let article_label = if current == EditorTarget::Post {
+        "→ Article"
+    } else {
+        "Article"
+    };
+    let page_label = if current == EditorTarget::Page {
+        "→ Page"
+    } else {
+        "Page"
+    };
+
+    card(
+        row![
+            text("Type de contenu :").size(13),
+            button(article_label).on_press(Message::ShowEditorTarget(EditorTarget::Post)),
+            button(page_label).on_press(Message::ShowEditorTarget(EditorTarget::Page)),
+        ]
+        .spacing(8),
+    )
 }
 
 fn notifications_view(state: &StudioState) -> Element<'_, Message> {

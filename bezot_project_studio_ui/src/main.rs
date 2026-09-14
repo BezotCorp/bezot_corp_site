@@ -104,6 +104,10 @@ fn project_root_argument(args: &[String]) -> io::Result<&str> {
 fn update(state: &mut StudioState, message: Message) {
     match message {
         Message::Navigate(page) => state.current_page = page,
+        Message::ShowEditorTarget(target) => {
+            state.editor_target = target;
+            state.selected_entry_id = None;
+        }
         Message::ReloadContent => match load_content_entries(&state.project_root) {
             Ok(entries) => {
                 state.entries = entries;

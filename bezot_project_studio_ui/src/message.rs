@@ -1,4 +1,5 @@
 use crate::card_item_field::CardItemField;
+use crate::editor_target::EditorTarget;
 use crate::locale::Locale;
 use crate::page::Page;
 use crate::page_block_field::PageBlockField;
@@ -9,6 +10,7 @@ use common::PageBlockKind;
 #[derive(Debug, Clone)]
 pub(crate) enum Message {
     Navigate(Page),
+    ShowEditorTarget(EditorTarget),
     ReloadContent,
     SelectEntry(String),
     NewPost,
