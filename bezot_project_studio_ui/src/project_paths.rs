@@ -23,3 +23,7 @@ pub(crate) fn resolve_project_root(input: &str) -> io::Result<PathBuf> {
 pub(crate) fn studio_core_manifest_path() -> PathBuf {
     repository_root().join("bezot_project_studio_core/Cargo.toml")
 }
+
+pub(crate) fn editorial_ai_manifest_path() -> PathBuf {
+    repository_root().join("bezot_project_editorial_ai/Cargo.toml")
+}

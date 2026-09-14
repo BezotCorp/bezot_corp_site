@@ -1,11 +1,12 @@
 use crate::card_item_field::CardItemField;
 use crate::editor_target::EditorTarget;
+use crate::editorial_ai_client::PostReview;
 use crate::locale::Locale;
 use crate::page::Page;
 use crate::page_block_field::PageBlockField;
 use crate::page_field::PageField;
 use crate::post_field::PostField;
-use common::PageBlockKind;
+use common::{PageBlockKind, PostEditorState};
 
 #[derive(Debug, Clone)]
 pub(crate) enum Message {
@@ -49,4 +50,11 @@ pub(crate) enum Message {
     AddCardItem(Locale, usize),
     RemoveCardItem(Locale, usize, usize),
     CardItemFieldChanged(Locale, usize, usize, CardItemField, String),
+
+    AiModelChanged(String),
+    AiTopicChanged(String),
+    GenerateDraft,
+    DraftGenerated(Box<Result<PostEditorState, String>>),
+    RunReview,
+    ReviewCompleted(Result<Vec<PostReview>, String>),
 }

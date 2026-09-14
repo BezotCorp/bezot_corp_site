@@ -1,8 +1,12 @@
+mod ai_task;
+mod ai_view;
 mod card_item_field;
 mod content_entry;
 mod content_kind_filter;
 mod content_loader;
 mod editor_target;
+mod editorial_ai_client;
+mod editorial_ai_runner;
 mod locale;
 mod localized_content_summary;
 mod message;
@@ -28,11 +32,13 @@ mod tests;
 use std::{env, io, path::PathBuf};
 
 use common::{PostEditorState, PostLocaleEditor};
-use iced::{Result, Theme, application};
+use iced::{Result, Task, Theme, application};
 
+use ai_task::AiTask;
 use content_kind_filter::ContentKindFilter;
 use content_loader::load_content_entries;
 use editor_target::EditorTarget;
+use editorial_ai_client::PostReview;
 use message::Message;
 use page::Page;
 use page_reader::load_page_editor;
@@ -58,6 +64,10 @@ fn main() -> Result {
             page_editor: Default::default(),
             editor_target: EditorTarget::Post,
             current_page: Page::Dashboard,
+            ai_model: String::new(),
+            ai_topic: String::new(),
+            ai_task: AiTask::default(),
+            ai_reviews: Vec::new(),
             notice: None,
             error: Some(error.to_string()),
         },
@@ -86,6 +96,10 @@ fn boot_state() -> io::Result<StudioState> {
         page_editor: Default::default(),
         editor_target: EditorTarget::Post,
         current_page: Page::Dashboard,
+        ai_model: String::new(),
+        ai_topic: String::new(),
+        ai_task: AiTask::default(),
+        ai_reviews: Vec::new(),
         notice: None,
         error: None,
     })
@@ -101,8 +115,87 @@ fn project_root_argument(args: &[String]) -> io::Result<&str> {
     }
 }
 
-fn update(state: &mut StudioState, message: Message) {
+fn update(state: &mut StudioState, message: Message) -> Task<Message> {
     match message {
+        Message::GenerateDraft => {
+            state.ai_task = AiTask::GeneratingDraft;
+            state.error = None;
+            state.notice = None;
+            let project_root = state.project_root.clone();
+            let model = state.ai_model.clone();
+            let topic = state.ai_topic.clone();
+            Task::perform(generate_draft_async(project_root, model, topic), |result| {
+                Message::DraftGenerated(Box::new(result))
+            })
+        }
+        Message::RunReview => {
+            state.ai_task = AiTask::RunningReview;
+            state.error = None;
+            state.notice = None;
+            let project_root = state.project_root.clone();
+            let model = state.ai_model.clone();
+            Task::perform(
+                run_review_async(project_root, model),
+                Message::ReviewCompleted,
+            )
+        }
+        other => {
+            apply(state, other);
+            Task::none()
+        }
+    }
+}
+
+async fn generate_draft_async(
+    project_root: PathBuf,
+    model: String,
+    topic: String,
+) -> std::result::Result<PostEditorState, String> {
+    editorial_ai_client::generate_draft(&project_root, &model, &topic)
+        .map_err(|error| error.to_string())
+}
+
+async fn run_review_async(
+    project_root: PathBuf,
+    model: String,
+) -> std::result::Result<Vec<PostReview>, String> {
+    editorial_ai_client::run_review(&project_root, &model).map_err(|error| error.to_string())
+}
+
+fn apply(state: &mut StudioState, message: Message) {
+    match message {
+        Message::GenerateDraft | Message::RunReview => {
+            unreachable!("intercepted in update() before reaching apply()")
+        }
+        Message::AiModelChanged(value) => state.ai_model = value,
+        Message::AiTopicChanged(value) => state.ai_topic = value,
+        Message::DraftGenerated(result) => {
+            state.ai_task = AiTask::Idle;
+            match *result {
+                Ok(editor) => {
+                    state.notice = Some(format!("Brouillon IA créé : {}.", editor.id));
+                    state.post_editor = editor;
+                    state.editor_target = EditorTarget::Post;
+                    state.selected_entry_id = None;
+                    state.current_page = Page::Editor;
+                    if let Ok(entries) = load_content_entries(&state.project_root) {
+                        state.entries = entries;
+                        state.clamp_page_index();
+                    }
+                }
+                Err(error) => state.error = Some(error),
+            }
+        }
+        Message::ReviewCompleted(result) => {
+            state.ai_task = AiTask::Idle;
+            match result {
+                Ok(reviews) => {
+                    state.notice = Some(format!("{} analyse(s) reçue(s).", reviews.len()));
+                    state.ai_reviews = reviews;
+                }
+                Err(error) => state.error = Some(error),
+            }
+        }
         Message::Navigate(page) => state.current_page = page,
         Message::ShowEditorTarget(target) => {
             state.editor_target = target;

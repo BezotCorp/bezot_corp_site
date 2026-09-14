@@ -70,6 +70,12 @@ It owns the human interface for editing and reviewing site content. It calls
 project tools as executables and must not write content JSON directly when a
 studio-core command exists for that operation.
 
+The "IA" tab calls `bezot_project_editorial_ai`'s `draft`/`review` commands
+the same way — as a subprocess, parsing their `--format json` output — never
+by linking editorial logic in-process. Both calls run through `iced::Task`
+(the app's first asynchronous work) so a slow local model does not freeze
+the UI; `StudioState.ai_task` tracks which one is in flight.
+
 Initial command:
 
 ```sh

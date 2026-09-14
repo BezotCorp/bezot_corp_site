@@ -3,6 +3,7 @@ use iced::{Element, Fill, Length};
 
 use common::{PostEditorState, PostLocaleEditor, PostQualityReport};
 
+use crate::ai_view::ai_page_view;
 use crate::content_entry::ContentEntry;
 use crate::content_kind_filter::ContentKindFilter;
 use crate::editor_target::EditorTarget;
@@ -33,6 +34,7 @@ pub(crate) fn view(state: &StudioState) -> Element<'_, Message> {
         ]
         .spacing(14)
         .into(),
+        Page::Ai => ai_page_view(state),
         Page::SiteTools => site_tools_page_view(state),
     };
 
