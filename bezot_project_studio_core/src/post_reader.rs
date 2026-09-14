@@ -61,6 +61,7 @@ fn locale_editor_from_value(locale: &Value) -> io::Result<PostLocaleEditor> {
             .and_then(Value::as_str)
             .unwrap_or("")
             .to_string(),
+        subtitle: hero_field(locale, "subtitle").unwrap_or_default(),
         slug: string_field(locale, "slug")?.to_string(),
         description: seo
             .get("description")
@@ -84,6 +85,18 @@ fn first_paragraph(locale: &Value) -> Option<String> {
         .find(|block| block.get("type").and_then(Value::as_str) == Some("paragraph"))?
         .get("props")?
         .get("text")?
+        .as_str()
+        .map(str::to_string)
+}
+
+fn hero_field(locale: &Value, field: &str) -> Option<String> {
+    locale
+        .get("blocks")?
+        .as_array()?
+        .iter()
+        .find(|block| block.get("type").and_then(Value::as_str) == Some("hero"))?
+        .get("props")?
+        .get(field)?
         .as_str()
         .map(str::to_string)
 }

@@ -84,7 +84,7 @@ impl From<&PostEditorState> for PostDocument {
 
         Self {
             id: editor.id.clone(),
-            kind: "editorial".to_string(),
+            kind: post_kind(&editor.id),
             status: editor.status.clone(),
             author: editor.author.clone(),
             published_at: editor.date.clone(),
@@ -106,7 +106,7 @@ impl PostLocaleDocument {
                 kind: "hero".to_string(),
                 props: PostBlockPropsDocument {
                     title: Some(title.clone()),
-                    subtitle: Some("Édité depuis Bezot Project Studio.".to_string()),
+                    subtitle: Some(hero_subtitle(editor)),
                     text: None,
                     url: None,
                     label: None,
@@ -151,5 +151,26 @@ impl PostLocaleDocument {
             },
             blocks,
         }
+    }
+}
+
+/// "ai-editorial-"-prefixed ids are "Édito IA" pieces: mark them as such on
+/// disk too, not just in the id and the visible title/subtitle disclosure.
+fn post_kind(id: &str) -> String {
+    if id.starts_with("ai-editorial-") {
+        "ai_editorial".to_string()
+    } else {
+        "editorial".to_string()
+    }
+}
+
+/// Falls back to a generic studio disclosure only when the editor did not
+/// set one — e.g. AI-generated drafts set an honest "written by AI, reviewed
+/// by Bezot Corp" subtitle here instead of inheriting this placeholder.
+fn hero_subtitle(editor: &common::PostLocaleEditor) -> String {
+    if editor.subtitle.trim().is_empty() {
+        "Édité depuis Bezot Project Studio.".to_string()
+    } else {
+        editor.subtitle.clone()
     }
 }

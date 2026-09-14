@@ -3,6 +3,7 @@ use common::PostLocaleEditor;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum PostField {
     Title,
+    Subtitle,
     Slug,
     Description,
     Paragraph,
@@ -16,6 +17,7 @@ pub(crate) enum PostField {
 pub(crate) fn field_mut(editor: &mut PostLocaleEditor, field: PostField) -> &mut String {
     match field {
         PostField::Title => &mut editor.title,
+        PostField::Subtitle => &mut editor.subtitle,
         PostField::Slug => &mut editor.slug,
         PostField::Description => &mut editor.description,
         PostField::Paragraph => &mut editor.paragraph,

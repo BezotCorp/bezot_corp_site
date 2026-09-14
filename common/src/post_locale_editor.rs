@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PostLocaleEditor {
     pub title: String,
+    #[serde(default)]
+    pub subtitle: String,
     pub slug: String,
     pub description: String,
     pub paragraph: String,
@@ -22,6 +24,7 @@ impl PostLocaleEditor {
     pub fn french_default() -> Self {
         Self {
             title: "Nouvel article Bezot Corp".to_string(),
+            subtitle: String::new(),
             slug: "blog/nouvel-article".to_string(),
             description: "Article édité depuis Bezot Project Studio.".to_string(),
             paragraph: "Texte de l’article à compléter.".to_string(),
@@ -36,6 +39,7 @@ impl PostLocaleEditor {
     pub fn english_default() -> Self {
         Self {
             title: "New Bezot Corp article".to_string(),
+            subtitle: String::new(),
             slug: "blog/new-article".to_string(),
             description: "Article edited from Bezot Project Studio.".to_string(),
             paragraph: "Article text to complete.".to_string(),

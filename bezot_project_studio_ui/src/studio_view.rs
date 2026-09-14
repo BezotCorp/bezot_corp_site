@@ -569,6 +569,12 @@ fn locale_editor_view<'a>(
             ]
             .spacing(10),
             field_input(
+                "Sous-titre (affiché sous le titre — utilisé pour la mention « généré par IA » sur les édito IA)",
+                &editor.subtitle,
+                locale,
+                PostField::Subtitle
+            ),
+            field_input(
                 "Description SEO",
                 &editor.description,
                 locale,

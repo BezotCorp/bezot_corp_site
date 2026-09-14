@@ -24,9 +24,17 @@ fn builds_an_editor_state_from_a_well_formed_model_reply() {
     assert!(editor.id.starts_with("ai-editorial-"));
     assert_eq!(editor.status, "draft");
     assert_eq!(editor.author, "Bezot Corp AI");
-    assert_eq!(editor.fr.title, "Titre FR");
+    assert_eq!(editor.fr.title, "Édito IA : Titre FR");
+    assert_eq!(
+        editor.fr.subtitle,
+        "Texte généré par IA, relu et publié par Bezot Corp."
+    );
     assert_eq!(editor.fr.slug, "blog/titre-fr");
-    assert_eq!(editor.en.title, "Title EN");
+    assert_eq!(editor.en.title, "AI Editorial: Title EN");
+    assert_eq!(
+        editor.en.subtitle,
+        "AI-generated, reviewed, and published by Bezot Corp."
+    );
     assert_eq!(editor.en.paragraph, "Paragraph EN");
 }
 
