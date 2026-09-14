@@ -1,0 +1,74 @@
+{
+  "slug": "confidentialite",
+  "seo": {
+    "title": "Politique de confidentialité - Bezot Corp",
+    "description": "Politique de confidentialité de Bezot Corp : données personnelles, cookies, consentement, publicité et droits des utilisateurs.",
+    "robots": "index, follow",
+    "ogTitle": "Politique de confidentialité - Bezot Corp",
+    "ogDescription": "Données personnelles, cookies, consentement, publicité et droits des utilisateurs.",
+    "ogImage": "/og/bezot-corp-default.png"
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "props": {
+        "title": "Politique de confidentialité",
+        "subtitle": "Données personnelles, cookies, consentement et services tiers."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Cette politique explique comment Bezot Corp traite les données personnelles susceptibles d’être collectées lors de la consultation du site bezotcorp.com."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Le site peut traiter des données techniques nécessaires à son fonctionnement, comme l’adresse IP, le navigateur utilisé, les journaux techniques, les préférences de langue et les choix de consentement."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Le site utilise une plateforme de gestion du consentement afin de recueillir, enregistrer et transmettre les choix relatifs aux cookies, traceurs, publicités personnalisées, mesure d’audience et services tiers lorsque ces traitements sont activés."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Les cookies ou traceurs non strictement nécessaires ne sont utilisés qu’en fonction des choix exprimés par l’utilisateur dans l’interface de consentement."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Le site peut afficher des liens d’affiliation, des contenus externes ou des publicités fournis par des partenaires tiers. Ces partenaires peuvent traiter certaines données selon leurs propres politiques de confidentialité lorsque leurs services sont chargés ou utilisés."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Les liens d’affiliation peuvent permettre à Bezot Corp de percevoir une commission si l’utilisateur effectue une action ou un achat après avoir suivi un lien partenaire, sans coût supplémentaire annoncé pour l’utilisateur."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "L’utilisateur peut à tout moment modifier ses choix de consentement via l’interface prévue à cet effet lorsque celle-ci est disponible sur le site."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Conformément à la réglementation applicable, l’utilisateur peut demander l’accès, la rectification, l’effacement, la limitation ou l’opposition au traitement de ses données personnelles lorsque ces droits sont applicables."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Pour toute demande relative à la confidentialité ou aux données personnelles, l’utilisateur peut contacter Bezot Corp à l’adresse contact@bezotcorp.com."
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "status": "enabled",
+  "entryPageId": "blog",
+  "postPaths": [
+    "posts/2026-05-20/integration-public-paragraph-rule.json",
+    "posts/2026-05-17/ai-editorial-local-ai.json",
+    "posts/2026-05-16/ai-editorial-agent-workflow.json",
+    "posts/2026-05-15/ai-editorial-small-models.json",
+    "posts/2026-05-14/ai-editorial-docs-as-product.json"
+  ]
+}

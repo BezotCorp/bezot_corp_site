@@ -1,0 +1,74 @@
+{
+  "slug": "legal-notice",
+  "seo": {
+    "title": "Legal Notice - Bezot Corp",
+    "description": "Bezot Corp legal notice: publisher, publication manager, hosting, intellectual property and liability.",
+    "robots": "index, follow",
+    "ogTitle": "Legal Notice - Bezot Corp",
+    "ogDescription": "Publisher, publication manager, hosting, intellectual property and liability.",
+    "ogImage": "/og/bezot-corp-default.png"
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "props": {
+        "title": "Legal Notice",
+        "subtitle": "Information about bezotcorp.com."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Website: bezotcorp.com"
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Publisher: Bezot Corp."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Publication manager: Rémi Bezot."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Contact: contact@bezotcorp.com"
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Hosting provider: OVH SAS, 2 rue Kellermann, 59100 Roubaix, France. Website: www.ovhcloud.com."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Some editorial content may be generated or assisted by artificial intelligence, then reviewed, selected or published under the responsibility of the publication manager."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "The content published on this website is provided for informational purposes. Bezot Corp seeks to keep information accurate and up to date, without guaranteeing the complete absence of errors, omissions or unavailability."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Texts, graphic elements, editorial content, names, logos and website elements are protected by applicable intellectual property rules unless otherwise stated."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "The website may contain links to third-party websites. Bezot Corp is not responsible for the content, operation or privacy practices of those external websites."
+      }
+    }
+  ]
+}

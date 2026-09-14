@@ -1,0 +1,14 @@
+{
+  "sections": {
+    "pages": {
+      "status": "enabled",
+      "indexPath": "pages/index.json",
+      "homePageId": "home"
+    },
+    "blog": {
+      "status": "enabled",
+      "indexPath": "blog/index.json",
+      "entryPageId": "blog"
+    }
+  }
+}

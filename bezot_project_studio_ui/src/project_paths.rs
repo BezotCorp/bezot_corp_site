@@ -1,0 +1,29 @@
+use common::repository_root;
+use std::{io, path::PathBuf};
+
+pub(crate) fn resolve_project_root(input: &str) -> io::Result<PathBuf> {
+    let given = PathBuf::from(input);
+    if given.exists() {
+        return Ok(given);
+    }
+
+    let candidate = repository_root().join(&given);
+    if candidate.exists() {
+        return Ok(candidate);
+    }
+
+    Err(io::Error::new(
+        io::ErrorKind::NotFound,
+        format!(
+            "could not find project root '{input}' relative to the current directory or repository root"
+        ),
+    ))
+}
+
+pub(crate) fn studio_core_manifest_path() -> PathBuf {
+    repository_root().join("bezot_project_studio_core/Cargo.toml")
+}
+
+pub(crate) fn editorial_ai_manifest_path() -> PathBuf {
+    repository_root().join("bezot_project_editorial_ai/Cargo.toml")
+}

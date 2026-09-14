@@ -1,0 +1,35 @@
+{
+  "slug": "projects",
+  "seo": {
+    "title": "Projects - Bezot Corp",
+    "description": "Explore Bezot Corp public projects across local AI and developer tooling.",
+    "robots": "index, follow",
+    "ogTitle": "Projects - Bezot Corp",
+    "ogDescription": "Public projects by Bezot Corp across local AI and developer tooling.",
+    "ogImage": "/og/bezot-corp-projects.png"
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "props": {
+        "title": "Projects",
+        "subtitle": "Public projects by Bezot Corp."
+      }
+    },
+    {
+      "type": "card_grid",
+      "props": {
+        "items": [
+          {
+            "title": "Local AI Agent",
+            "text": "A local development assistant designed to understand, analyze, and modify code."
+          },
+          {
+            "title": "Developer Tools",
+            "text": "Tools to structure, verify, and automate software projects."
+          }
+        ]
+      }
+    }
+  ]
+}

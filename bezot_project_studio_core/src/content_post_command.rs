@@ -1,0 +1,73 @@
+use std::io::{self, Read};
+use std::path::Path;
+
+use common::{PostEditorState, PostQualityReport, invalid_data, invalid_input};
+
+use crate::post_deleter::delete_post;
+use crate::post_reader::load_post_editor;
+use crate::post_writer::save_post;
+use crate::preview_runner::{build_preview_root, preview_route, run_preview};
+
+pub fn run_content_post_command(project_root: &Path, args: &[String]) -> io::Result<()> {
+    match args {
+        [command, post_id] if command == "get" => print_post(project_root, post_id),
+        [command, post_id] if command == "quality" => print_quality(project_root, post_id),
+        [command] if command == "save" => save_post_from_stdin(project_root),
+        [command, post_id] if command == "delete" => delete_post(project_root, post_id),
+        [command] if command == "preview" => preview_post_from_stdin(project_root),
+        _ => Err(invalid_input(
+            "usage: content post get <post-id> | content post quality <post-id> | content post save | content post delete <post-id> | content post preview",
+        )),
+    }
+}
+
+fn print_post(project_root: &Path, post_id: &str) -> io::Result<()> {
+    let editor = load_post_editor(project_root, post_id)?;
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&editor).map_err(invalid_data)?
+    );
+    Ok(())
+}
+
+fn print_quality(project_root: &Path, post_id: &str) -> io::Result<()> {
+    let editor = load_post_editor(project_root, post_id)?;
+    let report = PostQualityReport::analyze(&editor);
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&report).map_err(invalid_data)?
+    );
+    Ok(())
+}
+
+fn save_post_from_stdin(project_root: &Path) -> io::Result<()> {
+    let mut source = String::new();
+    io::stdin().read_to_string(&mut source)?;
+    let editor = serde_json::from_str::<PostEditorState>(&source).map_err(invalid_data)?;
+    save_post(project_root, &editor)
+}
+
+/// Builds an isolated copy of the project, saves the given (possibly
+/// unsaved) editor state into it with both locales forced to "published",
+/// then starts the same production pipeline and preview server real
+/// publication would use — never touching the real, tracked content.
+fn preview_post_from_stdin(project_root: &Path) -> io::Result<()> {
+    let mut source = String::new();
+    io::stdin().read_to_string(&mut source)?;
+    let mut editor = serde_json::from_str::<PostEditorState>(&source).map_err(invalid_data)?;
+    editor.status = "published".to_string();
+
+    let preview_root = build_preview_root(project_root)?;
+    save_post(&preview_root, &editor)?;
+
+    println!(
+        "PREVIEW_ROUTE_FR: {}",
+        preview_route("fr-fr", &editor.fr.slug)
+    );
+    println!(
+        "PREVIEW_ROUTE_EN: {}",
+        preview_route("en-us", &editor.en.slug)
+    );
+
+    run_preview(&preview_root)
+}

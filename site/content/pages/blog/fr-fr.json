@@ -1,0 +1,33 @@
+{
+  "slug": "blog",
+  "seo": {
+    "title": "Blog - Bezot Corp",
+    "description": "Articles, éditos IA et notes techniques de Bezot Corp.",
+    "robots": "index, follow",
+    "ogTitle": "Blog - Bezot Corp",
+    "ogDescription": "Articles, éditos IA et notes techniques autour de l’IA locale et des outils développeur.",
+    "ogImage": "/og/bezot-corp-default.png"
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "props": {
+        "title": "Blog",
+        "subtitle": "Articles, éditos IA et notes techniques."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Retrouvez les publications de Bezot Corp autour de l’IA locale, du développement logiciel et de l’automatisation."
+      }
+    },
+    {
+      "type": "post_list",
+      "props": {
+        "limit": 10,
+        "showDescription": true
+      }
+    }
+  ]
+}

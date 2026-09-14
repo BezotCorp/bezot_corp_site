@@ -1,0 +1,74 @@
+{
+  "slug": "privacy-policy",
+  "seo": {
+    "title": "Privacy Policy - Bezot Corp",
+    "description": "Bezot Corp privacy policy: personal data, cookies, consent, advertising and user rights.",
+    "robots": "index, follow",
+    "ogTitle": "Privacy Policy - Bezot Corp",
+    "ogDescription": "Personal data, cookies, consent, advertising and user rights.",
+    "ogImage": "/og/bezot-corp-default.png"
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "props": {
+        "title": "Privacy Policy",
+        "subtitle": "Personal data, cookies, consent and third-party services."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "This policy explains how Bezot Corp handles personal data that may be collected when visiting bezotcorp.com."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "The website may process technical data required for its operation, such as IP address, browser information, technical logs, language preferences and consent choices."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "The website uses a consent management platform to collect, store and communicate user choices related to cookies, trackers, personalized advertising, audience measurement and third-party services when such processing is enabled."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Cookies or trackers that are not strictly necessary are used according to the choices expressed by the user through the consent interface."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "The website may display affiliate links, external content or advertisements provided by third-party partners. These partners may process certain data under their own privacy policies when their services are loaded or used."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Affiliate links may allow Bezot Corp to earn a commission if the user performs an action or makes a purchase after following a partner link, without any announced additional cost for the user."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "The user may change consent choices at any time through the consent interface when it is available on the website."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Depending on the applicable law, the user may request access, rectification, deletion, restriction or objection to the processing of personal data when these rights apply."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "For any privacy or personal data request, the user may contact Bezot Corp at contact@bezotcorp.com."
+      }
+    }
+  ]
+}

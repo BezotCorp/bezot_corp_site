@@ -1,0 +1,26 @@
+{
+  "slug": "",
+  "seo": {
+    "title": "Bezot Corp",
+    "description": "Bezot Corp conçoit des outils logiciels orientés IA locale, automatisation et productivité développeur.",
+    "robots": "index, follow",
+    "ogTitle": "Bezot Corp",
+    "ogDescription": "IA locale, automatisation et outils développeur.",
+    "ogImage": "/og/bezot-corp-default.png"
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "props": {
+        "title": "Bezot Corp",
+        "subtitle": "IA locale, automatisation et outils développeur."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Bezot Corp construit des outils logiciels propres, utiles et orientés productivité."
+      }
+    }
+  ]
+}

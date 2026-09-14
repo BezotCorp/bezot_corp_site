@@ -1,0 +1,26 @@
+{
+  "slug": "",
+  "seo": {
+    "title": "Bezot Corp",
+    "description": "Bezot Corp builds software focused on local AI, automation, and developer productivity.",
+    "robots": "index, follow",
+    "ogTitle": "Bezot Corp",
+    "ogDescription": "Local AI, automation, and developer tools.",
+    "ogImage": "/og/bezot-corp-default.png"
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "props": {
+        "title": "Bezot Corp",
+        "subtitle": "Local AI, automation, and developer tools."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Bezot Corp builds clean, useful software tools focused on productivity."
+      }
+    }
+  ]
+}

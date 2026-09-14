@@ -1,0 +1,10 @@
+{
+  "name": "Bezot Corp",
+  "baseUrl": "https://bezotcorp.com",
+  "defaultLocale": "fr-fr",
+  "locales": [
+    "fr-fr",
+    "en-us"
+  ],
+  "defaultOgImage": "/og/bezot-corp-default.png"
+}

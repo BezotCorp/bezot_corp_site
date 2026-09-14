@@ -1,0 +1,74 @@
+{
+  "slug": "mentions-legales",
+  "seo": {
+    "title": "Mentions légales - Bezot Corp",
+    "description": "Mentions légales de Bezot Corp : éditeur, responsable de publication, hébergement, propriété intellectuelle et responsabilité.",
+    "robots": "index, follow",
+    "ogTitle": "Mentions légales - Bezot Corp",
+    "ogDescription": "Éditeur, responsable de publication, hébergement, propriété intellectuelle et responsabilité.",
+    "ogImage": "/og/bezot-corp-default.png"
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "props": {
+        "title": "Mentions légales",
+        "subtitle": "Informations relatives au site bezotcorp.com."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Site : bezotcorp.com"
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Éditeur : Bezot Corp."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Responsable de publication : Rémi Bezot."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Contact : contact@bezotcorp.com"
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Hébergeur : OVH SAS, 2 rue Kellermann, 59100 Roubaix, France. Site web : www.ovhcloud.com."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Certains contenus éditoriaux peuvent être générés ou assistés par intelligence artificielle, puis relus, sélectionnés ou publiés sous la responsabilité du responsable de publication."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Le contenu publié sur ce site est fourni à titre informatif. Bezot Corp s’efforce de maintenir les informations exactes et à jour, sans garantir l’absence totale d’erreur, d’omission ou d’indisponibilité."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Les textes, éléments graphiques, contenus éditoriaux, noms, logos et éléments du site sont protégés par les règles applicables à la propriété intellectuelle, sauf mention contraire."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Le site peut contenir des liens vers des sites tiers. Bezot Corp n’est pas responsable du contenu, du fonctionnement ou des pratiques de confidentialité de ces sites externes."
+      }
+    }
+  ]
+}

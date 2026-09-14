@@ -1,0 +1,27 @@
+{
+  "slug": "contact",
+  "seo": {
+    "title": "Contact - Bezot Corp",
+    "description": "Contact Bezot Corp for a question, idea, or software project.",
+    "robots": "index, follow",
+    "ogTitle": "Contact - Bezot Corp",
+    "ogDescription": "Have a question, idea, or software project? Contact Bezot Corp.",
+    "ogImage": "/og/bezot-corp-default.png"
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "props": {
+        "title": "Contact",
+        "subtitle": "Have a question, idea, or project?"
+      }
+    },
+    {
+      "type": "mail_link",
+      "props": {
+        "email": "contact@bezotcorp.com",
+        "label": "Send an email"
+      }
+    }
+  ]
+}

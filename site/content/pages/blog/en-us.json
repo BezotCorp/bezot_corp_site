@@ -1,0 +1,33 @@
+{
+  "slug": "blog",
+  "seo": {
+    "title": "Blog - Bezot Corp",
+    "description": "Articles, AI editorials, and technical notes from Bezot Corp.",
+    "robots": "index, follow",
+    "ogTitle": "Blog - Bezot Corp",
+    "ogDescription": "Articles, AI editorials, and technical notes about local AI and developer tooling.",
+    "ogImage": "/og/bezot-corp-default.png"
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "props": {
+        "title": "Blog",
+        "subtitle": "Articles, AI editorials, and technical notes."
+      }
+    },
+    {
+      "type": "paragraph",
+      "props": {
+        "text": "Read Bezot Corp publications about local AI, software development, and automation."
+      }
+    },
+    {
+      "type": "post_list",
+      "props": {
+        "limit": 10,
+        "showDescription": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "slug": "projets",
+  "seo": {
+    "title": "Projets - Bezot Corp",
+    "description": "Découvrez les projets publics de Bezot Corp autour de l'IA locale et des outils développeur.",
+    "robots": "index, follow",
+    "ogTitle": "Projets - Bezot Corp",
+    "ogDescription": "Les projets publics de Bezot Corp autour de l'IA locale et des outils développeur.",
+    "ogImage": "/og/bezot-corp-projects.png"
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "props": {
+        "title": "Projets",
+        "subtitle": "Les projets publics de Bezot Corp."
+      }
+    },
+    {
+      "type": "card_grid",
+      "props": {
+        "items": [
+          {
+            "title": "Agent IA local",
+            "text": "Un assistant de développement local conçu pour comprendre, analyser et modifier du code."
+          },
+          {
+            "title": "Outils développeur",
+            "text": "Des outils pour structurer, vérifier et automatiser les projets logiciels."
+          }
+        ]
+      }
+    }
+  ]
+}
