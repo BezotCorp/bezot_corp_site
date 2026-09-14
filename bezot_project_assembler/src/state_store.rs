@@ -6,7 +6,7 @@ use std::{
 use bincode_next::config;
 use ron::ser::PrettyConfig;
 
-use crate::assembler_state::AssemblerState;
+use crate::{assembler_state::AssemblerState, content_validator::invalid_data};
 
 pub fn load_state(project_root: &Path) -> io::Result<Option<AssemblerState>> {
     let bin_path = state_bin_path(project_root);
@@ -69,11 +69,4 @@ fn write_if_changed(path: &Path, bytes: &[u8]) -> io::Result<()> {
         Ok(existing) if existing == bytes => Ok(()),
         _ => fs::write(path, bytes),
     }
-}
-
-fn invalid_data<E>(error: E) -> io::Error
-where
-    E: std::error::Error + Send + Sync + 'static,
-{
-    io::Error::new(io::ErrorKind::InvalidData, error)
 }

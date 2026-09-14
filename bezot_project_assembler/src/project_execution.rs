@@ -3,28 +3,11 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CommandMode {
-    Dev,
-    Production,
-}
+use common::CommandMode;
 
-impl CommandMode {
-    pub fn parse(value: Option<&str>) -> Result<Self, String> {
-        match value {
-            Some("dev") => Ok(Self::Dev),
-            Some("production") => Ok(Self::Production),
-            Some(value) => Err(format!(
-                "unknown command \"{value}\"; expected dev or production"
-            )),
-            None => Err("missing command; expected dev or production".to_string()),
-        }
-    }
-}
-
-pub fn execute(mode: CommandMode, project_root: PathBuf) -> io::Result<()> {
+pub fn execute(mode: CommandMode, project_root: PathBuf, port: Option<u16>) -> io::Result<()> {
     match mode {
-        CommandMode::Dev => run_dev(&project_root),
+        CommandMode::Dev => run_dev(&project_root, port),
         CommandMode::Production => prepare_final_site(&project_root),
     }
 }
@@ -83,11 +66,20 @@ fn prepare_final_site(project_root: &Path) -> io::Result<()> {
     )
 }
 
-fn run_dev(project_root: &Path) -> io::Result<()> {
+fn run_dev(project_root: &Path, port: Option<u16>) -> io::Result<()> {
     prepare_final_site(project_root)?;
 
     let prebuild_root = project_root.join("prebuild");
-    run_pnpm(&prebuild_root, &["exec", "vite", "preview"])
+    let port_argument = port.map(|port| port.to_string());
+    let mut arguments = vec!["exec", "vite", "preview"];
+    if let Some(port_argument) = &port_argument {
+        // --strictPort makes a taken port a hard failure instead of Vite
+        // silently picking another one, which callers that need a
+        // predictable URL (the studio's preview feature) rely on.
+        arguments.extend(["--port", port_argument, "--strictPort"]);
+    }
+
+    run_pnpm(&prebuild_root, &arguments)
 }
 
 fn run_pnpm(working_directory: &Path, arguments: &[&str]) -> io::Result<()> {
@@ -113,25 +105,5 @@ fn run_command(working_directory: &Path, program: &str, arguments: &[&str]) -> i
             None => format!("{command} was terminated by a signal"),
         };
         Err(io::Error::other(message))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn rejects_missing_mode() {
-        assert!(CommandMode::parse(None).is_err());
-    }
-
-    #[test]
-    fn parses_execution_modes() {
-        assert_eq!(CommandMode::parse(Some("dev")).unwrap(), CommandMode::Dev);
-        assert_eq!(
-            CommandMode::parse(Some("production")).unwrap(),
-            CommandMode::Production
-        );
-        assert!(CommandMode::parse(Some("unknown")).is_err());
     }
 }

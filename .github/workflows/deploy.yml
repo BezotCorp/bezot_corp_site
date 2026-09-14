@@ -28,7 +28,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Prepare checked final site
-        run: cargo run --release --manifest-path bezot_project_assembler/Cargo.toml -- site production
+        run: cargo run --release --manifest-path bezot_project_studio_core/Cargo.toml -- site production
 
       - name: Deploy to OVH
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5

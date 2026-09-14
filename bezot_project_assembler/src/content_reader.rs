@@ -1,9 +1,22 @@
-use std::collections::BTreeSet;
-use std::fs;
-use std::io;
-use std::path::{Path, PathBuf};
+use std::{
+    fs, io,
+    path::{Path, PathBuf},
+};
 
 use serde_json::{Map, Value};
+
+use crate::{
+    asserts::assert_file,
+    content_validator::validate_section,
+    string_operations::{string_at, string_field},
+};
+use crate::{
+    asserts::{
+        assert_array_contains_string, assert_no_locale_index_fields, assert_non_empty_string,
+        assert_object, assert_safe_relative_path, assert_status, assert_unique_strings,
+    },
+    content_validator::invalid_data_message,
+};
 
 #[derive(Debug, Clone)]
 pub struct ContentModel {
@@ -14,27 +27,29 @@ pub struct ContentModel {
     pub posts: Vec<Value>,
 }
 
-pub fn read_content_model(project_root: &Path) -> io::Result<ContentModel> {
-    let content_dir = project_root.join("content");
+impl ContentModel {
+    pub(crate) fn read_content_model(project_root: &Path) -> io::Result<ContentModel> {
+        let content_dir = project_root.join("content");
 
-    let content_index = read_json(&content_dir.join("index.json"))?;
+        let content_index = read_json(&content_dir.join("index.json"))?;
 
-    let pages_section = get_required_object(&content_index, &["sections", "pages"])?;
-    let blog_section = get_required_object(&content_index, &["sections", "blog"])?;
+        let pages_section = get_required_object(&content_index, &["sections", "pages"])?;
+        let blog_section = get_required_object(&content_index, &["sections", "blog"])?;
 
-    validate_section(pages_section, "sections.pages")?;
-    validate_section(blog_section, "sections.blog")?;
+        validate_section(pages_section, "sections.pages")?;
+        validate_section(blog_section, "sections.blog")?;
 
-    let pages = read_pages(&content_dir, pages_section, blog_section)?;
-    let posts = read_blog_posts(&content_dir, blog_section)?;
+        let pages = read_pages(&content_dir, pages_section, blog_section)?;
+        let posts = read_blog_posts(&content_dir, blog_section)?;
 
-    Ok(ContentModel {
-        site: read_json(&content_dir.join("website-metadata.json"))?,
-        redirects: read_json(&content_dir.join("redirects.json"))?,
-        gone: read_json(&content_dir.join("gone-routes.json"))?,
-        pages,
-        posts,
-    })
+        Ok(Self {
+            site: read_json(&content_dir.join("website-metadata.json"))?,
+            redirects: read_json(&content_dir.join("redirects.json"))?,
+            gone: read_json(&content_dir.join("gone-routes.json"))?,
+            pages,
+            posts,
+        })
+    }
 }
 
 fn read_pages(
@@ -54,7 +69,7 @@ fn read_pages(
 
     let pages_dir = pages_index_path
         .parent()
-        .ok_or_else(|| invalid_data("pages index has no parent directory"))?;
+        .ok_or_else(|| invalid_data_message("pages index has no parent directory"))?;
 
     let pages_index = read_json(&pages_index_path)?;
     let page_ids = array_field(
@@ -76,10 +91,10 @@ fn read_pages(
     for page_id_value in page_ids {
         let page_id = page_id_value
             .as_str()
-            .ok_or_else(|| invalid_data("pageId must be a string"))?;
+            .ok_or_else(|| invalid_data_message("pageId must be a string"))?;
 
         if page_id.is_empty() {
-            return Err(invalid_data("pageId must be a non-empty string"));
+            return Err(invalid_data_message("pageId must be a non-empty string"));
         }
 
         let page_dir = pages_dir.join(page_id);
@@ -99,7 +114,7 @@ fn read_pages(
 
         for (locale, locale_index_value) in locales_index {
             let locale_index = locale_index_value.as_object().ok_or_else(|| {
-                invalid_data(format!(
+                invalid_data_message(format!(
                     "page \"{page_id}\" locale \"{locale}\" must be an object"
                 ))
             })?;
@@ -129,7 +144,7 @@ fn read_pages(
             }
 
             let locale_content_object = locale_content.as_object().ok_or_else(|| {
-                invalid_data(format!(
+                invalid_data_message(format!(
                     "page \"{page_id}\" locale \"{locale}\" content must be an object"
                 ))
             })?;
@@ -167,7 +182,7 @@ fn read_blog_posts(
 
     let blog_dir = blog_index_path
         .parent()
-        .ok_or_else(|| invalid_data("blog index has no parent directory"))?;
+        .ok_or_else(|| invalid_data_message("blog index has no parent directory"))?;
 
     let blog_index = read_json(&blog_index_path)?;
 
@@ -189,7 +204,7 @@ fn read_blog_posts(
     let section_entry_page_id = string_field(blog_section, "entryPageId")?;
 
     if entry_page_id != section_entry_page_id {
-        return Err(invalid_data(
+        return Err(invalid_data_message(
             "Blog entryPageId mismatch between content/index.json and content/blog/index.json",
         ));
     }
@@ -207,7 +222,7 @@ fn read_blog_posts(
     for post_path_value in post_paths {
         let post_path = post_path_value
             .as_str()
-            .ok_or_else(|| invalid_data("blog post path must be a string"))?;
+            .ok_or_else(|| invalid_data_message("blog post path must be a string"))?;
 
         assert_safe_relative_path(post_path, &format!("blog post path \"{post_path}\""))?;
 
@@ -242,37 +257,11 @@ fn read_blog_posts(
     Ok(posts)
 }
 
-fn validate_section(section: &Map<String, Value>, label: &str) -> io::Result<()> {
-    assert_status(section.get("status"), &["enabled", "disabled"], label)?;
-    assert_safe_relative_path(
-        string_field(section, "indexPath")?,
-        &format!("{label}.indexPath"),
-    )?;
-
-    if label == "sections.pages" {
-        assert_non_empty_string(section.get("homePageId"), "sections.pages.homePageId")?;
-    }
-
-    if label == "sections.blog" {
-        assert_non_empty_string(section.get("entryPageId"), "sections.blog.entryPageId")?;
-    }
-
-    Ok(())
-}
-
 fn read_json(path: &Path) -> io::Result<Value> {
     assert_file(path)?;
 
     let text = fs::read_to_string(path)?;
     serde_json::from_str(&text).map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))
-}
-
-fn assert_file(path: &Path) -> io::Result<()> {
-    if !path.is_file() {
-        return Err(invalid_data(format!("Missing file: {}", path.display())));
-    }
-
-    Ok(())
 }
 
 fn get_required_object<'a>(value: &'a Value, path: &[&str]) -> io::Result<&'a Map<String, Value>> {
@@ -281,35 +270,12 @@ fn get_required_object<'a>(value: &'a Value, path: &[&str]) -> io::Result<&'a Ma
     for key in path {
         current = current
             .get(*key)
-            .ok_or_else(|| invalid_data(format!("Missing {}", path.join("."))))?;
+            .ok_or_else(|| invalid_data_message(format!("Missing {}", path.join("."))))?;
     }
 
     current
         .as_object()
-        .ok_or_else(|| invalid_data(format!("{} must be an object", path.join("."))))
-}
-
-fn string_field<'a>(object: &'a Map<String, Value>, key: &str) -> io::Result<&'a str> {
-    object
-        .get(key)
-        .and_then(Value::as_str)
-        .filter(|value| !value.is_empty())
-        .ok_or_else(|| invalid_data(format!("{key} must be a non-empty string")))
-}
-
-fn string_at<'a>(value: &'a Value, path: &[&str], label: &str) -> io::Result<&'a str> {
-    let mut current = value;
-
-    for key in path {
-        current = current
-            .get(*key)
-            .ok_or_else(|| invalid_data(format!("Missing {label}")))?;
-    }
-
-    current
-        .as_str()
-        .filter(|value| !value.is_empty())
-        .ok_or_else(|| invalid_data(format!("{label} must be a non-empty string")))
+        .ok_or_else(|| invalid_data_message(format!("{} must be an object", path.join("."))))
 }
 
 fn array_field<'a>(value: &'a Value, path: &[&str], label: &str) -> io::Result<&'a Vec<Value>> {
@@ -318,124 +284,15 @@ fn array_field<'a>(value: &'a Value, path: &[&str], label: &str) -> io::Result<&
     for key in path {
         current = current
             .get(*key)
-            .ok_or_else(|| invalid_data(format!("Missing {label}")))?;
+            .ok_or_else(|| invalid_data_message(format!("Missing {label}")))?;
     }
 
     current
         .as_array()
-        .ok_or_else(|| invalid_data(format!("{label} must be an array")))
-}
-
-fn assert_non_empty_string(value: Option<&Value>, label: &str) -> io::Result<()> {
-    match value.and_then(Value::as_str) {
-        Some(value) if !value.is_empty() => Ok(()),
-        _ => Err(invalid_data(format!("{label} must be a non-empty string"))),
-    }
-}
-
-fn assert_object(value: Option<&Value>, label: &str) -> io::Result<()> {
-    match value.and_then(Value::as_object) {
-        Some(_) => Ok(()),
-        None => Err(invalid_data(format!("{label} must be an object"))),
-    }
-}
-
-fn assert_status(value: Option<&Value>, allowed: &[&str], label: &str) -> io::Result<()> {
-    let status = value
-        .and_then(Value::as_str)
-        .ok_or_else(|| invalid_data(format!("{label} has invalid status")))?;
-
-    if !allowed.contains(&status) {
-        return Err(invalid_data(format!(
-            "{label} has invalid status \"{status}\". Expected: {}",
-            allowed.join(", ")
-        )));
-    }
-
-    Ok(())
-}
-
-fn assert_unique_strings(values: &[Value], label: &str) -> io::Result<()> {
-    let mut seen = BTreeSet::new();
-
-    for value in values {
-        let string = value
-            .as_str()
-            .ok_or_else(|| invalid_data(format!("{label} must contain only strings")))?;
-
-        if seen.contains(string) {
-            return Err(invalid_data(format!(
-                "{label} contains duplicate value \"{string}\""
-            )));
-        }
-
-        seen.insert(string.to_string());
-    }
-
-    Ok(())
-}
-
-fn assert_array_contains_string(values: &[Value], expected: &str, label: &str) -> io::Result<()> {
-    let contains = values.iter().any(|value| value.as_str() == Some(expected));
-
-    if !contains {
-        return Err(invalid_data(format!(
-            "{label} \"{expected}\" is not listed in content/pages/index.json"
-        )));
-    }
-
-    Ok(())
-}
-
-fn assert_safe_relative_path(relative_path: &str, label: &str) -> io::Result<()> {
-    if relative_path.is_empty() {
-        return Err(invalid_data(format!("{label} must be a non-empty string")));
-    }
-
-    let path = Path::new(relative_path);
-
-    if path.is_absolute() {
-        return Err(invalid_data(format!(
-            "{label} must be relative, got absolute path \"{relative_path}\""
-        )));
-    }
-
-    if relative_path.split('/').any(|segment| segment == "..") {
-        return Err(invalid_data(format!(
-            "{label} must not escape its index directory: \"{relative_path}\""
-        )));
-    }
-
-    Ok(())
+        .ok_or_else(|| invalid_data_message(format!("{label} must be an array")))
 }
 
 fn safe_content_path(content_dir: &Path, relative_path: &str, label: &str) -> io::Result<PathBuf> {
     assert_safe_relative_path(relative_path, label)?;
     Ok(content_dir.join(relative_path))
-}
-
-fn assert_no_locale_index_fields(
-    page_id: &str,
-    locale: &str,
-    locale_content: &Value,
-) -> io::Result<()> {
-    let object = locale_content.as_object().ok_or_else(|| {
-        invalid_data(format!(
-            "Page \"{page_id}\" locale \"{locale}\" must be an object"
-        ))
-    })?;
-
-    for field in ["status", "updatedAt"] {
-        if object.contains_key(field) {
-            return Err(invalid_data(format!(
-                "Page \"{page_id}\" locale \"{locale}\" must not define \"{field}\". Put it in content/pages/{page_id}/index.json."
-            )));
-        }
-    }
-
-    Ok(())
-}
-
-fn invalid_data(message: impl Into<String>) -> io::Error {
-    io::Error::new(io::ErrorKind::InvalidData, message.into())
 }

@@ -23,24 +23,24 @@ See [docs/site-assembly.md](docs/site-assembly.md) for the ownership boundaries.
 Rust, Node.js, and pnpm are required.
 
 ```sh
-cargo run --manifest-path bezot_project_assembler/Cargo.toml -- site dev
+cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site dev
 ```
 
-The Rust assembler is the public entrypoint. It creates the initial prebuild,
-installs its dependencies, prepares the final site, runs the same checks as
-`production`, and starts Vite Preview from the prebuild.
+The studio core executable is the public entrypoint. It creates the initial
+prebuild, installs its dependencies, prepares the final site, runs the same
+checks as `production`, and starts Vite Preview from the prebuild.
 
 Do not edit `site/prebuild/`; it is disposable assembler output.
 
 ## Production
 
 ```sh
-cargo run --release --manifest-path bezot_project_assembler/Cargo.toml -- site production
+cargo run --release --manifest-path bezot_project_studio_core/Cargo.toml -- site production
 ```
 
-The assembler creates a self-contained prebuild, prepares the final site,
-prerenders every published route, and executes the HTML, SEO, accessibility,
-and reference checks.
+The studio core executable creates a self-contained prebuild, prepares the final
+site, prerenders every published route, and executes the HTML, SEO,
+accessibility, and reference checks.
 
 The deployable output is `site/prebuild/dist/`. In CI, deployment happens only
 after this command succeeds.

@@ -7,6 +7,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0f172a" />
 
+    <!-- Google Consent Mode default: deny analytics/ads storage until the
+         InMobi CMP below records an explicit choice. Must run before the
+         GTM snippet so GTM's own tags start in this denied state. -->
+    <script type="text/javascript">
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+        wait_for_update: 500,
+      });
+    </script>
+
+    <!-- Google Tag Manager -->
+    <script>
+      (function (w, d, s, l, i) {
+        w[l] = w[l] || [];
+        w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+        var f = d.getElementsByTagName(s)[0],
+          j = d.createElement(s),
+          dl = l != 'dataLayer' ? '&l=' + l : '';
+        j.async = true;
+        j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+        f.parentNode.insertBefore(j, f);
+      })(window, document, 'script', 'dataLayer', 'GTM-WZRQ8MGG');
+    </script>
+    <!-- End Google Tag Manager -->
+
     <!-- InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.3) -->
     <script type="text/javascript" async="true">
       (function () {
@@ -325,9 +357,53 @@
     </script>
     <!-- End InMobi Choice. Consent Manager Tag v3.0 (for TCF 2.3) -->
 
+    <!-- Bridges the InMobi/TCF consent decision into Google Consent Mode, so
+         GTM's tags (GA4 included) only start writing analytics/ad storage
+         once the visitor has actually consented through the banner above. -->
+    <script type="text/javascript">
+      (function () {
+        if (typeof window.__tcfapi !== 'function') {
+          return;
+        }
+
+        window.__tcfapi('addEventListener', 2, function (tcData, success) {
+          if (!success || !tcData || !tcData.purpose) {
+            return;
+          }
+          if (tcData.eventStatus !== 'tcloaded' && tcData.eventStatus !== 'useractioncomplete') {
+            return;
+          }
+
+          var consents = tcData.purpose.consent || {};
+          // TCF purposes: 1 = store/access info on device, 7-10 = measurement
+          // and product-improvement purposes analytics relies on.
+          var analyticsGranted = !!(consents[1] && (consents[7] || consents[8] || consents[9] || consents[10]));
+          // TCF purposes: 2-4 = ad selection/delivery/personalization.
+          var adsGranted = !!(consents[1] && consents[2] && consents[3] && consents[4]);
+
+          window.gtag('consent', 'update', {
+            analytics_storage: analyticsGranted ? 'granted' : 'denied',
+            ad_storage: adsGranted ? 'granted' : 'denied',
+            ad_user_data: adsGranted ? 'granted' : 'denied',
+            ad_personalization: adsGranted ? 'granted' : 'denied',
+          });
+        });
+      })();
+    </script>
+
     <title>Bezot Corp</title>
   </head>
   <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript
+      ><iframe
+        src="https://www.googletagmanager.com/ns.html?id=GTM-WZRQ8MGG"
+        height="0"
+        width="0"
+        style="display: none; visibility: hidden"
+      ></iframe
+    ></noscript>
+    <!-- End Google Tag Manager (noscript) -->
     <div id="root"></div>
     <script type="module" src="/assembled/main.tsx"></script>
   </body>

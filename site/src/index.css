@@ -175,6 +175,35 @@ article h2 a:hover {
   color: white;
 }
 
+.affiliate-callout {
+  max-width: 760px;
+  padding: 28px;
+  border: 1px solid rgba(251, 191, 36, 0.34);
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(251, 191, 36, 0.12), rgba(14, 165, 233, 0.08)),
+    rgba(30, 41, 59, 0.72);
+  box-shadow: 0 24px 80px rgba(2, 6, 23, 0.22);
+}
+
+.affiliate-callout__disclosure {
+  margin: 0 0 12px;
+  color: #fbbf24;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.affiliate-callout a {
+  display: inline-flex;
+  margin-top: 12px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #020617;
+  font-weight: 800;
+}
+
 section[aria-label='Articles'],
 section[aria-label='Posts'],
 section:has(article) {
