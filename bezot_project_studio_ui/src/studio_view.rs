@@ -1,26 +1,39 @@
 use iced::widget::{button, column, container, row, scrollable, text, text_input};
-use iced::{Background, Border, Color, Element, Fill, Length, Shadow, Theme, Vector};
+use iced::{Element, Fill, Length};
+
+use common::{PostEditorState, PostLocaleEditor, PostQualityReport};
 
 use crate::content_entry::ContentEntry;
 use crate::content_kind_filter::ContentKindFilter;
+use crate::locale::Locale;
 use crate::message::Message;
-use crate::post_editor_state::PostEditorState;
-use crate::post_locale_editor::PostLocaleEditor;
-use crate::post_quality::PostQualityReport;
+use crate::page::Page;
+use crate::post_field::PostField;
 use crate::studio_state::StudioState;
+use crate::styles::{
+    accent_color, accent_panel_style, card_style, danger_color, info_color, panel_style,
+    shell_style, success_color, warning_color,
+};
+use crate::widgets::{
+    card, checklist_line, labeled_input, panel, section_title, stat_bar, status_chip,
+};
 
 pub(crate) fn view(state: &StudioState) -> Element<'_, Message> {
-    let workspace: Element<'_, Message> = if state.library_visible {
-        column![content_sidebar_view(state), post_workspace_view(state)]
-            .spacing(18)
-            .into()
-    } else {
-        post_workspace_view(state)
+    let page_content = match state.current_page {
+        Page::Dashboard => dashboard_page_view(state),
+        Page::Library => content_sidebar_view(state),
+        Page::Editor => post_workspace_view(state),
+        Page::SiteTools => site_tools_page_view(state),
     };
 
-    let content = column![top_bar_view(state), status_line_view(state), workspace,]
-        .spacing(18)
-        .padding(22);
+    let content = column![
+        header_view(state),
+        nav_view(state.current_page),
+        notifications_view(state),
+        page_content,
+    ]
+    .spacing(18)
+    .padding(22);
 
     container(scrollable(content))
         .width(Fill)
@@ -29,54 +42,34 @@ pub(crate) fn view(state: &StudioState) -> Element<'_, Message> {
         .into()
 }
 
-fn top_bar_view(state: &StudioState) -> Element<'_, Message> {
-    let save_label = if state.edited_post_exists() {
-        "Mettre à jour"
-    } else {
-        "Créer l’article"
-    };
-    let library_label = if state.library_visible {
-        "Masquer bibliothèque"
-    } else {
-        "Voir bibliothèque"
-    };
-    let library_message = if state.library_visible {
-        Message::HideLibrary
-    } else {
-        Message::ShowLibrary
-    };
-
+fn header_view(state: &StudioState) -> Element<'_, Message> {
     card(
-        row![
-            column![
-                text("Studio éditorial Bezot").size(34),
-                text("Publier, optimiser, monétiser et préparer le site final.").size(16),
-                text(state.project_root.display().to_string()).size(12),
-            ]
-            .spacing(6)
-            .width(Length::FillPortion(2)),
-            column![
-                row![
-                    button(library_label).on_press(library_message),
-                    button("Recharger").on_press(Message::ReloadContent),
-                    button("Nouvel article").on_press(Message::NewPost),
-                ]
-                .spacing(8),
-                row![
-                    button(save_label).on_press(Message::SavePost),
-                    button("Préparer le site").on_press(Message::PrepareSite),
-                ]
-                .spacing(8),
-            ]
-            .spacing(8)
-            .width(Length::FillPortion(1)),
+        column![
+            text("Studio éditorial Bezot").size(34),
+            text("Publier, optimiser, monétiser et préparer le site final.").size(16),
+            text(state.project_root.display().to_string()).size(12),
         ]
-        .spacing(18),
+        .spacing(6),
     )
 }
 
-fn status_line_view(state: &StudioState) -> Element<'_, Message> {
-    let mut line = column![dashboard_view(state)].spacing(10);
+fn nav_view(current_page: Page) -> Element<'static, Message> {
+    let mut items = row![].spacing(8);
+
+    for page in Page::ALL {
+        let label = if page == current_page {
+            format!("→ {}", page.label())
+        } else {
+            page.label().to_string()
+        };
+        items = items.push(button(text(label)).on_press(Message::Navigate(page)));
+    }
+
+    card(items)
+}
+
+fn notifications_view(state: &StudioState) -> Element<'_, Message> {
+    let mut line = column![].spacing(10);
 
     if let Some(notice) = &state.notice {
         line = line.push(notification_view("Info", notice));
@@ -93,42 +86,141 @@ fn notification_view<'a>(label: &'a str, value: &'a str) -> Element<'a, Message>
     card(row![text(label).size(14), text(value).size(14)].spacing(10))
 }
 
-fn dashboard_view(state: &StudioState) -> Element<'_, Message> {
-    let published = state
+fn dashboard_page_view(state: &StudioState) -> Element<'_, Message> {
+    let published = count_entries(state, |entry| entry.status == "published");
+    let drafts = count_entries(state, |entry| entry.status == "draft");
+    let archived = count_entries(state, |entry| entry.status == "archived");
+    let pages = count_entries(state, |entry| entry.kind == "page");
+    let posts = count_entries(state, |entry| entry.kind == "post");
+    let posts_total = posts.max(1);
+    let posts_with_both_locales = count_entries(state, |entry| {
+        entry.kind == "post" && entry.locales.len() >= 2
+    });
+    let posts_incomplete = posts.saturating_sub(posts_with_both_locales);
+    let status_max = published.max(drafts).max(archived);
+    let kind_max = pages.max(posts);
+
+    column![
+        section_title("Tableau de bord"),
+        row![
+            metric_card("Pages", pages, "site public"),
+            metric_card("Articles", posts, "blog / SEO"),
+            metric_card("Publiés", published, "en ligne"),
+            metric_card("Brouillons", drafts, "à compléter"),
+            metric_card("Archivés", archived, "hors ligne"),
+        ]
+        .spacing(12),
+        row![
+            panel(
+                column![
+                    text("Statuts des contenus").size(16),
+                    stat_bar(
+                        "Publiés".to_string(),
+                        published,
+                        status_max,
+                        success_color()
+                    ),
+                    stat_bar(
+                        "Brouillons".to_string(),
+                        drafts,
+                        status_max,
+                        warning_color()
+                    ),
+                    stat_bar("Archivés".to_string(), archived, status_max, danger_color()),
+                ]
+                .spacing(10)
+            ),
+            panel(
+                column![
+                    text("Répartition du contenu").size(16),
+                    stat_bar("Pages".to_string(), pages, kind_max, info_color()),
+                    stat_bar("Articles".to_string(), posts, kind_max, accent_color()),
+                ]
+                .spacing(10)
+            ),
+            panel(
+                column![
+                    text("Couverture linguistique des articles").size(16),
+                    stat_bar(
+                        "FR + EN".to_string(),
+                        posts_with_both_locales,
+                        posts_total,
+                        success_color()
+                    ),
+                    stat_bar(
+                        "Incomplets".to_string(),
+                        posts_incomplete,
+                        posts_total,
+                        warning_color()
+                    ),
+                ]
+                .spacing(10)
+            ),
+        ]
+        .spacing(14),
+        draft_posts_panel(state),
+    ]
+    .spacing(18)
+    .into()
+}
+
+fn count_entries(state: &StudioState, predicate: impl Fn(&ContentEntry) -> bool) -> usize {
+    state
         .entries
         .iter()
-        .filter(|entry| entry.status == "published")
-        .count();
+        .filter(|entry| predicate(entry))
+        .count()
+}
+
+fn draft_posts_panel(state: &StudioState) -> Element<'_, Message> {
     let drafts = state
         .entries
         .iter()
-        .filter(|entry| entry.status == "draft")
-        .count();
-    let archived = state
-        .entries
-        .iter()
-        .filter(|entry| entry.status == "archived")
-        .count();
-    let monetizable_posts = state
-        .entries
-        .iter()
-        .filter(|entry| entry.kind == "post")
-        .count();
-    let pages = state
-        .entries
-        .iter()
-        .filter(|entry| entry.kind == "page")
-        .count();
+        .filter(|entry| entry.kind == "post" && entry.status == "draft");
 
-    row![
-        metric_card("Pages", pages, "site public"),
-        metric_card("Articles", monetizable_posts, "blog / SEO"),
-        metric_card("Publiés", published, "en ligne"),
-        metric_card("Brouillons", drafts, "à compléter"),
-        metric_card("Archivés", archived, "hors ligne"),
-    ]
-    .spacing(12)
-    .into()
+    let mut list = column![text("Brouillons à terminer").size(16)].spacing(8);
+    let mut has_drafts = false;
+
+    for entry in drafts {
+        has_drafts = true;
+        let title = entry
+            .locales
+            .iter()
+            .find(|locale| locale.locale == "fr-fr")
+            .or_else(|| entry.locales.first())
+            .map(|locale| locale.title.as_str())
+            .unwrap_or("(sans titre)");
+
+        list = list.push(
+            row![
+                text(format!("{title} · {}", entry.id)).size(13),
+                button("Ouvrir").on_press(Message::SelectEntry(entry.id.clone())),
+            ]
+            .spacing(10),
+        );
+    }
+
+    if !has_drafts {
+        list = list.push(text("Aucun brouillon en attente.").size(13));
+    }
+
+    panel(list)
+}
+
+fn site_tools_page_view(state: &StudioState) -> Element<'_, Message> {
+    panel(
+        column![
+            section_title("Outils du site"),
+            text(format!(
+                "Projet : {}",
+                state.project_root.display()
+            ))
+            .size(13),
+            text("Génère un site final prêt pour la mise en production : build complet, prérendu de chaque route, puis vérifications HTML, SEO et accessibilité.").size(13),
+            button("Préparer le site").on_press(Message::PrepareSite),
+        ]
+        .spacing(12),
+    )
 }
 
 fn metric_card(label: &str, value: usize, caption: &str) -> Element<'static, Message> {
@@ -160,6 +252,7 @@ fn content_sidebar_view(state: &StudioState) -> Element<'_, Message> {
             section_title("Bibliothèque"),
             status_chip(format!("{} pages", pages)),
             status_chip(format!("{} articles", posts)),
+            button("Recharger").on_press(Message::ReloadContent),
         ]
         .spacing(8),
         text(format!(
@@ -185,12 +278,6 @@ fn content_sidebar_view(state: &StudioState) -> Element<'_, Message> {
                 ContentKindFilter::Posts,
                 state.kind_filter
             ),
-        ]
-        .spacing(8),
-        row![
-            filter_button("Tout", ContentKindFilter::All, state.kind_filter),
-            filter_button("Pages", ContentKindFilter::Pages, state.kind_filter),
-            filter_button("Articles", ContentKindFilter::Posts, state.kind_filter),
         ]
         .spacing(8),
     ]
@@ -307,7 +394,7 @@ fn post_workspace_view(state: &StudioState) -> Element<'_, Message> {
     let save_label = if state.edited_post_exists() {
         "Mettre à jour l’article existant"
     } else {
-        "Créer un nouvel article brouillon"
+        "Enregistrer ce nouveau brouillon"
     };
 
     container(
@@ -319,16 +406,8 @@ fn post_workspace_view(state: &StudioState) -> Element<'_, Message> {
                     quick_actions_view(),
                     publication_workflow_view(editor),
                     base_metadata_view(editor),
-                    locale_editor_view(
-                        "Version française",
-                        &editor.fr,
-                        LocaleEditorMessages::french(),
-                    ),
-                    locale_editor_view(
-                        "Version anglaise",
-                        &editor.en,
-                        LocaleEditorMessages::english()
-                    ),
+                    locale_editor_view("Version française", &editor.fr, Locale::French),
+                    locale_editor_view("Version anglaise", &editor.en, Locale::English),
                 ]
                 .spacing(14)
                 .width(Length::FillPortion(2)),
@@ -368,9 +447,13 @@ fn current_article_banner<'a>(state: &'a StudioState, save_label: &'a str) -> El
             text(format!("Mode : {mode}")).size(16),
             text(format!("Article courant : {}", state.post_editor.id)).size(13),
             text(format!("Sélection bibliothèque : {selected}")).size(13),
-            text(format!("Action de sauvegarde : {save_label}")).size(13),
+            row![
+                button("Nouveau brouillon").on_press(Message::NewPost),
+                button(save_label).on_press(Message::SavePost),
+            ]
+            .spacing(8),
         ]
-        .spacing(6),
+        .spacing(8),
     )
 }
 
@@ -439,27 +522,29 @@ fn metadata_value<'a>(label: &'a str, value: &'a str) -> Element<'a, Message> {
 fn locale_editor_view<'a>(
     title: &'a str,
     editor: &'a PostLocaleEditor,
-    messages: LocaleEditorMessages,
+    locale: Locale,
 ) -> Element<'a, Message> {
     panel(
         column![
             text(title).size(18),
             row![
-                labeled_input("Titre", &editor.title, messages.title_changed),
-                labeled_input("Slug", &editor.slug, messages.slug_changed),
+                field_input("Titre", &editor.title, locale, PostField::Title),
+                field_input("Slug", &editor.slug, locale, PostField::Slug),
             ]
             .spacing(10),
-            labeled_input(
+            field_input(
                 "Description SEO",
                 &editor.description,
-                messages.description_changed
+                locale,
+                PostField::Description
             ),
-            labeled_input(
+            field_input(
                 "Paragraphe principal",
                 &editor.paragraph,
-                messages.paragraph_changed
+                locale,
+                PostField::Paragraph
             ),
-            monetization_editor_view(editor, messages),
+            monetization_editor_view(editor, locale),
         ]
         .spacing(10),
     )
@@ -467,38 +552,43 @@ fn locale_editor_view<'a>(
 
 fn monetization_editor_view<'a>(
     editor: &'a PostLocaleEditor,
-    messages: LocaleEditorMessages,
+    locale: Locale,
 ) -> Element<'a, Message> {
     container(
         column![
             text("Monétisation / affiliation").size(16),
             row![
-                labeled_input(
+                field_input(
                     "Titre encart",
                     &editor.affiliate_title,
-                    messages.affiliate_title_changed
+                    locale,
+                    PostField::AffiliateTitle
                 ),
-                labeled_input(
+                field_input(
                     "Libellé bouton",
                     &editor.affiliate_label,
-                    messages.affiliate_label_changed
+                    locale,
+                    PostField::AffiliateLabel
                 ),
             ]
             .spacing(10),
-            labeled_input(
+            field_input(
                 "URL affiliée ou sponsorisée",
                 &editor.affiliate_url,
-                messages.affiliate_url_changed
+                locale,
+                PostField::AffiliateUrl
             ),
-            labeled_input(
+            field_input(
                 "Texte encart",
                 &editor.affiliate_text,
-                messages.affiliate_text_changed
+                locale,
+                PostField::AffiliateText
             ),
-            labeled_input(
+            field_input(
                 "Mention visible",
                 &editor.affiliate_disclosure,
-                messages.affiliate_disclosure_changed
+                locale,
+                PostField::AffiliateDisclosure
             ),
         ]
         .spacing(8),
@@ -507,6 +597,17 @@ fn monetization_editor_view<'a>(
     .width(Fill)
     .style(accent_panel_style)
     .into()
+}
+
+fn field_input<'a>(
+    label: &'a str,
+    value: &'a str,
+    locale: Locale,
+    field: PostField,
+) -> Element<'a, Message> {
+    labeled_input(label, value, move |value| {
+        Message::PostFieldChanged(locale, field, value)
+    })
 }
 
 fn editorial_score_view(report: &PostQualityReport) -> Element<'static, Message> {
@@ -564,55 +665,6 @@ fn recommendations_view(report: &PostQualityReport) -> Element<'static, Message>
     panel(list)
 }
 
-fn labeled_input<'a>(
-    label: &'a str,
-    value: &'a str,
-    on_input: fn(String) -> Message,
-) -> Element<'a, Message> {
-    column![
-        text(label).size(12),
-        text_input(label, value).on_input(on_input).padding(12),
-    ]
-    .spacing(5)
-    .width(Fill)
-    .into()
-}
-
-fn filter_button(
-    label: &str,
-    filter: ContentKindFilter,
-    active_filter: ContentKindFilter,
-) -> Element<'_, Message> {
-    let label = if filter == active_filter {
-        format!("✓ {label}")
-    } else {
-        label.to_string()
-    };
-    let message = match filter {
-        ContentKindFilter::All => Message::ShowAllContent,
-        ContentKindFilter::Pages => Message::ShowPages,
-        ContentKindFilter::Posts => Message::ShowPosts,
-    };
-
-    button(text(label)).on_press(message).into()
-}
-
-fn section_title(label: &str) -> Element<'static, Message> {
-    text(label.to_string()).size(20).into()
-}
-
-fn status_chip(label: String) -> Element<'static, Message> {
-    container(text(label).size(12))
-        .padding([6, 10])
-        .style(chip_style)
-        .into()
-}
-
-fn checklist_line(label: &str, valid: bool) -> String {
-    let marker = if valid { "✓" } else { "!" };
-    format!("{marker} {label}")
-}
-
 fn monetization_label(editor: &PostEditorState) -> &'static str {
     let fr = !editor.fr.affiliate_url.trim().is_empty();
     let en = !editor.en.affiliate_url.trim().is_empty();
@@ -639,136 +691,5 @@ fn status_label(status: &str) -> &'static str {
         "draft" => "Brouillon",
         "archived" => "Archivé",
         _ => "Inconnu",
-    }
-}
-
-fn card<'a>(content: impl Into<Element<'a, Message>>) -> Element<'a, Message> {
-    container(content)
-        .padding(18)
-        .width(Fill)
-        .style(card_style)
-        .into()
-}
-
-fn panel<'a>(content: impl Into<Element<'a, Message>>) -> Element<'a, Message> {
-    container(content)
-        .padding(14)
-        .width(Fill)
-        .style(panel_style)
-        .into()
-}
-
-fn shell_style(_theme: &Theme) -> iced::widget::container::Style {
-    iced::widget::container::Style {
-        text_color: Some(color(226, 232, 240)),
-        background: Some(Background::Color(color(15, 23, 42))),
-        ..Default::default()
-    }
-}
-
-fn card_style(_theme: &Theme) -> iced::widget::container::Style {
-    iced::widget::container::Style {
-        text_color: Some(color(226, 232, 240)),
-        background: Some(Background::Color(color_alpha(30, 41, 59, 0.74))),
-        border: Border::default()
-            .rounded(24)
-            .width(1)
-            .color(color_alpha(148, 163, 184, 0.22)),
-        shadow: Shadow {
-            color: color_alpha(2, 6, 23, 0.24),
-            offset: Vector::new(0.0, 18.0),
-            blur_radius: 42.0,
-        },
-        ..Default::default()
-    }
-}
-
-fn panel_style(_theme: &Theme) -> iced::widget::container::Style {
-    iced::widget::container::Style {
-        text_color: Some(color(226, 232, 240)),
-        background: Some(Background::Color(color_alpha(15, 23, 42, 0.64))),
-        border: Border::default()
-            .rounded(18)
-            .width(1)
-            .color(color_alpha(148, 163, 184, 0.16)),
-        ..Default::default()
-    }
-}
-
-fn accent_panel_style(_theme: &Theme) -> iced::widget::container::Style {
-    iced::widget::container::Style {
-        text_color: Some(color(254, 243, 199)),
-        background: Some(Background::Color(color_alpha(120, 53, 15, 0.24))),
-        border: Border::default()
-            .rounded(18)
-            .width(1)
-            .color(color_alpha(251, 191, 36, 0.32)),
-        ..Default::default()
-    }
-}
-
-fn chip_style(_theme: &Theme) -> iced::widget::container::Style {
-    iced::widget::container::Style {
-        text_color: Some(color(203, 213, 225)),
-        background: Some(Background::Color(color_alpha(2, 6, 23, 0.42))),
-        border: Border::default()
-            .rounded(999)
-            .width(1)
-            .color(color_alpha(148, 163, 184, 0.2)),
-        ..Default::default()
-    }
-}
-
-fn color(red: u8, green: u8, blue: u8) -> Color {
-    Color::from_rgb8(red, green, blue)
-}
-
-fn color_alpha(red: u8, green: u8, blue: u8, alpha: f32) -> Color {
-    Color {
-        a: alpha,
-        ..Color::from_rgb8(red, green, blue)
-    }
-}
-
-#[derive(Clone, Copy)]
-struct LocaleEditorMessages {
-    title_changed: fn(String) -> Message,
-    slug_changed: fn(String) -> Message,
-    description_changed: fn(String) -> Message,
-    paragraph_changed: fn(String) -> Message,
-    affiliate_title_changed: fn(String) -> Message,
-    affiliate_text_changed: fn(String) -> Message,
-    affiliate_url_changed: fn(String) -> Message,
-    affiliate_label_changed: fn(String) -> Message,
-    affiliate_disclosure_changed: fn(String) -> Message,
-}
-
-impl LocaleEditorMessages {
-    fn french() -> Self {
-        Self {
-            title_changed: Message::PostFrenchTitleChanged,
-            slug_changed: Message::PostFrenchSlugChanged,
-            description_changed: Message::PostFrenchDescriptionChanged,
-            paragraph_changed: Message::PostFrenchParagraphChanged,
-            affiliate_title_changed: Message::PostFrenchAffiliateTitleChanged,
-            affiliate_text_changed: Message::PostFrenchAffiliateTextChanged,
-            affiliate_url_changed: Message::PostFrenchAffiliateUrlChanged,
-            affiliate_label_changed: Message::PostFrenchAffiliateLabelChanged,
-            affiliate_disclosure_changed: Message::PostFrenchAffiliateDisclosureChanged,
-        }
-    }
-
-    fn english() -> Self {
-        Self {
-            title_changed: Message::PostEnglishTitleChanged,
-            slug_changed: Message::PostEnglishSlugChanged,
-            description_changed: Message::PostEnglishDescriptionChanged,
-            paragraph_changed: Message::PostEnglishParagraphChanged,
-            affiliate_title_changed: Message::PostEnglishAffiliateTitleChanged,
-            affiliate_text_changed: Message::PostEnglishAffiliateTextChanged,
-            affiliate_url_changed: Message::PostEnglishAffiliateUrlChanged,
-            affiliate_label_changed: Message::PostEnglishAffiliateLabelChanged,
-            affiliate_disclosure_changed: Message::PostEnglishAffiliateDisclosureChanged,
-        }
     }
 }

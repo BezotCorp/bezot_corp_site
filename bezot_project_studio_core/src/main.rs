@@ -8,8 +8,6 @@ mod launcher;
 mod localized_content_summary;
 mod output_format;
 mod post_document;
-mod post_editor_state;
-mod post_locale_editor;
 mod post_reader;
 mod post_writer;
 mod process_runner;

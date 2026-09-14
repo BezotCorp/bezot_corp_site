@@ -1,24 +1,26 @@
+use serde::Serialize;
+
 use crate::post_editor_state::PostEditorState;
 use crate::post_locale_editor::PostLocaleEditor;
 
-#[derive(Debug, Clone)]
-pub(crate) struct PostQualityReport {
-    pub(crate) score: u8,
-    pub(crate) reading_minutes: usize,
-    pub(crate) french_words: usize,
-    pub(crate) english_words: usize,
-    pub(crate) checks: Vec<PostQualityCheck>,
-    pub(crate) recommendations: Vec<String>,
+#[derive(Debug, Clone, Serialize)]
+pub struct PostQualityReport {
+    pub score: u8,
+    pub reading_minutes: usize,
+    pub french_words: usize,
+    pub english_words: usize,
+    pub checks: Vec<PostQualityCheck>,
+    pub recommendations: Vec<String>,
 }
 
-#[derive(Debug, Clone)]
-pub(crate) struct PostQualityCheck {
-    pub(crate) label: &'static str,
-    pub(crate) passed: bool,
+#[derive(Debug, Clone, Serialize)]
+pub struct PostQualityCheck {
+    pub label: &'static str,
+    pub passed: bool,
 }
 
 impl PostQualityReport {
-    pub(crate) fn analyze(editor: &PostEditorState) -> Self {
+    pub fn analyze(editor: &PostEditorState) -> Self {
         let french_words = word_count(&editor.fr.paragraph);
         let english_words = word_count(&editor.en.paragraph);
         let total_words = french_words + english_words;

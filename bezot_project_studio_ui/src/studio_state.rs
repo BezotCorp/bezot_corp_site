@@ -2,7 +2,8 @@ use std::path::PathBuf;
 
 use crate::content_entry::ContentEntry;
 use crate::content_kind_filter::ContentKindFilter;
-use crate::post_editor_state::PostEditorState;
+use crate::page::Page;
+use common::PostEditorState;
 
 const PAGE_SIZE: usize = 6;
 
@@ -15,7 +16,7 @@ pub struct StudioState {
     pub page_index: usize,
     pub selected_entry_id: Option<String>,
     pub post_editor: PostEditorState,
-    pub library_visible: bool,
+    pub current_page: Page,
     pub notice: Option<String>,
     pub error: Option<String>,
 }

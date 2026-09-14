@@ -1,12 +1,15 @@
+use crate::locale::Locale;
+use crate::page::Page;
+use crate::post_field::PostField;
+
 #[derive(Debug, Clone)]
 pub(crate) enum Message {
+    Navigate(Page),
     ReloadContent,
     SelectEntry(String),
     NewPost,
     SavePost,
     PrepareSite,
-    ShowLibrary,
-    HideLibrary,
     SearchQueryChanged(String),
     ShowAllContent,
     ShowPages,
@@ -22,22 +25,5 @@ pub(crate) enum Message {
     PostDateChanged(String),
     PostStatusChanged(String),
     PostAuthorChanged(String),
-    PostFrenchTitleChanged(String),
-    PostFrenchSlugChanged(String),
-    PostFrenchDescriptionChanged(String),
-    PostFrenchParagraphChanged(String),
-    PostFrenchAffiliateTitleChanged(String),
-    PostFrenchAffiliateTextChanged(String),
-    PostFrenchAffiliateUrlChanged(String),
-    PostFrenchAffiliateLabelChanged(String),
-    PostFrenchAffiliateDisclosureChanged(String),
-    PostEnglishTitleChanged(String),
-    PostEnglishSlugChanged(String),
-    PostEnglishDescriptionChanged(String),
-    PostEnglishParagraphChanged(String),
-    PostEnglishAffiliateTitleChanged(String),
-    PostEnglishAffiliateTextChanged(String),
-    PostEnglishAffiliateUrlChanged(String),
-    PostEnglishAffiliateLabelChanged(String),
-    PostEnglishAffiliateDisclosureChanged(String),
+    PostFieldChanged(Locale, PostField, String),
 }

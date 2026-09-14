@@ -3,8 +3,8 @@ use std::path::Path;
 
 use common::invalid_data;
 
-use crate::post_editor_state::PostEditorState;
 use crate::studio_core_runner::{run_studio_core, studio_core_failure};
+use common::PostEditorState;
 
 pub(crate) fn load_post_editor(project_root: &Path, post_id: &str) -> io::Result<PostEditorState> {
     let output = run_studio_core(&[

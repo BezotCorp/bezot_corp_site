@@ -2,11 +2,10 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-use common::{invalid_data, invalid_input, read_json};
+use common::{PostEditorState, invalid_data, invalid_input, read_json};
 use serde_json::Value;
 
 use crate::post_document::PostDocument;
-use crate::post_editor_state::PostEditorState;
 
 pub fn save_post(project_root: &Path, editor: &PostEditorState) -> io::Result<()> {
     validate_editor(editor)?;
@@ -57,7 +56,7 @@ fn validate_slug_part(label: &str, value: &str) -> io::Result<()> {
 
 fn validate_affiliate_fields(
     locale_label: &str,
-    editor: &crate::post_locale_editor::PostLocaleEditor,
+    editor: &common::PostLocaleEditor,
 ) -> io::Result<()> {
     if editor.affiliate_url.trim().is_empty() {
         return Ok(());

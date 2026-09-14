@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use serde::Serialize;
 
-use crate::post_editor_state::PostEditorState;
+use common::PostEditorState;
 
 #[derive(Debug, Serialize)]
 pub struct PostDocument {
@@ -99,7 +99,7 @@ impl PostLocaleDocument {
         slug: String,
         title: String,
         description: String,
-        editor: &crate::post_locale_editor::PostLocaleEditor,
+        editor: &common::PostLocaleEditor,
     ) -> Self {
         let mut blocks = vec![
             PostBlockDocument {

@@ -1,11 +1,8 @@
 use std::io;
 use std::path::Path;
 
-use common::{invalid_data, invalid_input, read_json};
+use common::{PostEditorState, PostLocaleEditor, invalid_data, invalid_input, read_json};
 use serde_json::Value;
-
-use crate::post_editor_state::PostEditorState;
-use crate::post_locale_editor::PostLocaleEditor;
 
 pub fn load_post_editor(project_root: &Path, post_id: &str) -> io::Result<PostEditorState> {
     let content_dir = project_root.join("content");

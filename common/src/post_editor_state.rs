@@ -1,16 +1,17 @@
 use serde::{Deserialize, Serialize};
 
+use crate::current_date::today_yyyy_mm_dd;
 use crate::post_locale_editor::PostLocaleEditor;
-use common::{new_uuid, today_yyyy_mm_dd};
+use crate::unique_identifier::new_uuid;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub(crate) struct PostEditorState {
-    pub(crate) id: String,
-    pub(crate) date: String,
-    pub(crate) status: String,
-    pub(crate) author: String,
-    pub(crate) fr: PostLocaleEditor,
-    pub(crate) en: PostLocaleEditor,
+pub struct PostEditorState {
+    pub id: String,
+    pub date: String,
+    pub status: String,
+    pub author: String,
+    pub fr: PostLocaleEditor,
+    pub en: PostLocaleEditor,
 }
 
 impl Default for PostEditorState {
