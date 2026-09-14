@@ -98,6 +98,50 @@ fn saves_every_paragraph_as_its_own_block() {
 }
 
 #[test]
+fn falls_back_to_the_default_og_image_when_none_is_set() {
+    let project_root = temporary_project_root("post_writer_test");
+    let blog_dir = project_root.join("content/blog");
+    fs::create_dir_all(&blog_dir).unwrap();
+    fs::write(
+        blog_dir.join("index.json"),
+        r#"{
+  "status": "enabled",
+  "entryPageId": "blog",
+  "postPaths": []
+}
+"#,
+    )
+    .unwrap();
+
+    let mut editor = PostEditorState::default();
+    editor.fr.og_image = "/og/custom.png".to_string();
+    editor.en.og_image = String::new();
+
+    save_post(&project_root, &editor).unwrap();
+
+    let post_path = project_root
+        .join("content/blog/posts")
+        .join(&editor.date)
+        .join(format!("{}.json", editor.id));
+    let document = read_json(&post_path).unwrap();
+    let og_image = |locale: &str| {
+        document
+            .get("locales")
+            .and_then(|locales| locales.get(locale))
+            .and_then(|locale| locale.get("seo"))
+            .and_then(|seo| seo.get("ogImage"))
+            .and_then(Value::as_str)
+            .unwrap()
+            .to_string()
+    };
+
+    assert_eq!(og_image("fr-fr"), "/og/custom.png");
+    assert_eq!(og_image("en-us"), "/og/bezot-corp-default.png");
+
+    fs::remove_dir_all(project_root).unwrap();
+}
+
+#[test]
 fn rejects_a_post_with_no_paragraphs() {
     let project_root = temporary_project_root("post_writer_test");
     let blog_dir = project_root.join("content/blog");

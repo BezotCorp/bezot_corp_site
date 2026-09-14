@@ -7,6 +7,8 @@ pub struct PostLocaleEditor {
     pub subtitle: String,
     pub slug: String,
     pub description: String,
+    #[serde(default)]
+    pub og_image: String,
     pub paragraphs: Vec<String>,
     #[serde(default)]
     pub affiliate_title: String,
@@ -27,6 +29,7 @@ impl PostLocaleEditor {
             subtitle: String::new(),
             slug: "blog/nouvel-article".to_string(),
             description: "Article édité depuis Bezot Project Studio.".to_string(),
+            og_image: "/og/bezot-corp-default.png".to_string(),
             paragraphs: vec!["Texte de l’article à compléter.".to_string()],
             affiliate_title: String::new(),
             affiliate_text: String::new(),
@@ -42,6 +45,7 @@ impl PostLocaleEditor {
             subtitle: String::new(),
             slug: "blog/new-article".to_string(),
             description: "Article edited from Bezot Project Studio.".to_string(),
+            og_image: "/og/bezot-corp-default.png".to_string(),
             paragraphs: vec!["Article text to complete.".to_string()],
             affiliate_title: String::new(),
             affiliate_text: String::new(),

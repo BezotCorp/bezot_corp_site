@@ -68,6 +68,11 @@ fn locale_editor_from_value(locale: &Value) -> io::Result<PostLocaleEditor> {
             .and_then(Value::as_str)
             .unwrap_or("")
             .to_string(),
+        og_image: seo
+            .get("ogImage")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string(),
         paragraphs: all_paragraphs(locale),
         affiliate_title: affiliate_field(locale, "title").unwrap_or_default(),
         affiliate_text: affiliate_field(locale, "text").unwrap_or_default(),

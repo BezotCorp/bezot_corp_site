@@ -148,10 +148,20 @@ impl PostLocaleDocument {
                 description: description.clone(),
                 og_title: title.clone(),
                 og_description: description,
-                og_image: "/og/bezot-corp-default.png".to_string(),
+                og_image: og_image(editor),
             },
             blocks,
         }
+    }
+}
+
+/// Falls back to the generic placeholder only when the editor did not set
+/// one, the same way hero_subtitle does.
+fn og_image(editor: &common::PostLocaleEditor) -> String {
+    if editor.og_image.trim().is_empty() {
+        "/og/bezot-corp-default.png".to_string()
+    } else {
+        editor.og_image.clone()
     }
 }
 

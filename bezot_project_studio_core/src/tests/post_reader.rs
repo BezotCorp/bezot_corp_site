@@ -33,7 +33,8 @@ fn loads_existing_post_into_editor_state() {
       "slug": "blog/article-exemple",
       "seo": {
         "title": "Article exemple",
-        "description": "Description FR"
+        "description": "Description FR",
+        "ogImage": "/og/article-exemple.png"
       },
       "blocks": [
         {
@@ -75,6 +76,7 @@ fn loads_existing_post_into_editor_state() {
 
     assert_eq!(editor.id, "sample-post");
     assert_eq!(editor.fr.title, "Article exemple");
+    assert_eq!(editor.fr.og_image, "/og/article-exemple.png");
     assert_eq!(
         editor.fr.paragraphs,
         vec![

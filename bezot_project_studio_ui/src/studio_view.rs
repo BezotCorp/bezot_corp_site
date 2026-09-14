@@ -586,6 +586,12 @@ fn locale_editor_view<'a>(
                 locale,
                 PostField::Description
             ),
+            field_input(
+                "Image de partage (og:image, chemin public)",
+                &editor.og_image,
+                locale,
+                PostField::OgImage
+            ),
             paragraphs_editor_view(&editor.paragraphs, locale),
             monetization_editor_view(editor, locale),
         ]
