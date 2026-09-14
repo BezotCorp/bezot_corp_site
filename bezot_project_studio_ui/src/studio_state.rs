@@ -5,6 +5,8 @@ use crate::content_entry::ContentEntry;
 use crate::content_kind_filter::ContentKindFilter;
 use crate::editor_target::EditorTarget;
 use crate::editorial_ai_client::{OllamaModel, PostReview};
+use crate::media_client::MediaAsset;
+use crate::media_task::MediaTask;
 use crate::page::Page;
 use common::{PageEditorState, PostEditorState};
 
@@ -30,6 +32,8 @@ pub struct StudioState {
     pub ai_task: AiTask,
     pub ai_models: Vec<OllamaModel>,
     pub ai_reviews: Vec<PostReview>,
+    pub media_task: MediaTask,
+    pub media_assets: Vec<MediaAsset>,
     pub notice: Option<String>,
     pub error: Option<String>,
 }

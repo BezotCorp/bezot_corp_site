@@ -9,6 +9,9 @@ mod editorial_ai_client;
 mod editorial_ai_runner;
 mod locale;
 mod localized_content_summary;
+mod media_client;
+mod media_task;
+mod media_view;
 mod message;
 mod page;
 mod page_block_field;
@@ -40,6 +43,8 @@ use content_kind_filter::ContentKindFilter;
 use content_loader::load_content_entries;
 use editor_target::EditorTarget;
 use editorial_ai_client::{OllamaModel, PostReview};
+use media_client::MediaAsset;
+use media_task::MediaTask;
 use message::Message;
 use page::Page;
 use page_reader::load_page_editor;
@@ -73,6 +78,8 @@ fn main() -> Result {
             ai_task: AiTask::default(),
             ai_models: Vec::new(),
             ai_reviews: Vec::new(),
+            media_task: MediaTask::default(),
+            media_assets: Vec::new(),
             notice: None,
             error: Some(error.to_string()),
         },
@@ -93,6 +100,7 @@ fn boot_state() -> io::Result<StudioState> {
     // yet, say) must not block the rest of the studio from starting. The
     // "Actualiser la liste" button in the IA tab covers the retry.
     let ai_models = editorial_ai_client::list_models(&project_root).unwrap_or_default();
+    let media_assets = media_client::list_media(&project_root).unwrap_or_default();
 
     Ok(StudioState {
         project_root,
@@ -113,6 +121,8 @@ fn boot_state() -> io::Result<StudioState> {
         ai_task: AiTask::default(),
         ai_models,
         ai_reviews: Vec::new(),
+        media_task: MediaTask::default(),
+        media_assets,
         notice: None,
         error: None,
     })
@@ -159,6 +169,23 @@ fn update(state: &mut StudioState, message: Message) -> Task<Message> {
             let project_root = state.project_root.clone();
             Task::perform(list_models_async(project_root), Message::ModelsLoaded)
         }
+        Message::LoadMedia => {
+            state.media_task = MediaTask::LoadingList;
+            state.error = None;
+            state.notice = None;
+            let project_root = state.project_root.clone();
+            Task::perform(list_media_async(project_root), Message::MediaLoaded)
+        }
+        Message::PickAndUploadMedia => {
+            state.media_task = MediaTask::Uploading;
+            state.error = None;
+            state.notice = None;
+            let project_root = state.project_root.clone();
+            Task::perform(pick_and_upload_media_async(project_root), |result| {
+                Message::MediaUploaded(result)
+            })
+        }
+        Message::CopyMediaPath(path) => iced::clipboard::write(path),
         other => {
             apply(state, other);
             Task::none()
@@ -186,9 +213,37 @@ async fn list_models_async(project_root: PathBuf) -> std::result::Result<Vec<Oll
     editorial_ai_client::list_models(&project_root).map_err(|error| error.to_string())
 }
 
+async fn list_media_async(project_root: PathBuf) -> std::result::Result<Vec<MediaAsset>, String> {
+    media_client::list_media(&project_root).map_err(|error| error.to_string())
+}
+
+/// Opens the native file picker off the UI thread, then uploads the chosen
+/// file through studio_core in the same async step — a cancelled dialog
+/// yields `Ok(None)`, never an error.
+async fn pick_and_upload_media_async(
+    project_root: PathBuf,
+) -> std::result::Result<Option<MediaAsset>, String> {
+    let Some(file) = rfd::AsyncFileDialog::new()
+        .add_filter("Images", &["png", "jpg", "jpeg", "gif", "webp", "svg"])
+        .pick_file()
+        .await
+    else {
+        return Ok(None);
+    };
+
+    media_client::upload_media(&project_root, file.path())
+        .map(Some)
+        .map_err(|error| error.to_string())
+}
+
 fn apply(state: &mut StudioState, message: Message) {
     match message {
-        Message::GenerateDraft | Message::RunReview | Message::LoadModels => {
+        Message::GenerateDraft
+        | Message::RunReview
+        | Message::LoadModels
+        | Message::LoadMedia
+        | Message::PickAndUploadMedia
+        | Message::CopyMediaPath(_) => {
             unreachable!("intercepted in update() before reaching apply()")
         }
         Message::AiDraftModelChanged(value) => state.ai_draft_model = value,
@@ -229,6 +284,31 @@ fn apply(state: &mut StudioState, message: Message) {
                     state.notice = Some(format!("{} analyse(s) reçue(s).", reviews.len()));
                     state.ai_reviews = reviews;
                 }
+                Err(error) => state.error = Some(error),
+            }
+        }
+        Message::MediaLoaded(result) => {
+            state.media_task = MediaTask::Idle;
+            match result {
+                Ok(assets) => {
+                    state.notice = Some(format!("{} fichier(s) trouvé(s).", assets.len()));
+                    state.media_assets = assets;
+                }
+                Err(error) => state.error = Some(error),
+            }
+        }
+        Message::MediaUploaded(result) => {
+            state.media_task = MediaTask::Idle;
+            match result {
+                Ok(Some(asset)) => {
+                    state.notice = Some(format!("Fichier envoyé : {}.", asset.public_path));
+                    if let Ok(assets) = media_client::list_media(&state.project_root) {
+                        state.media_assets = assets;
+                    } else {
+                        state.media_assets.push(asset);
+                    }
+                }
+                Ok(None) => {}
                 Err(error) => state.error = Some(error),
             }
         }

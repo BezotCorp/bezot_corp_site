@@ -8,6 +8,7 @@ use crate::content_entry::ContentEntry;
 use crate::content_kind_filter::ContentKindFilter;
 use crate::editor_target::EditorTarget;
 use crate::locale::Locale;
+use crate::media_view::media_page_view;
 use crate::message::Message;
 use crate::page::Page;
 use crate::page_workspace_view::page_workspace_view;
@@ -34,6 +35,7 @@ pub(crate) fn view(state: &StudioState) -> Element<'_, Message> {
         ]
         .spacing(14)
         .into(),
+        Page::Media => media_page_view(state),
         Page::Ai => ai_page_view(state),
         Page::SiteTools => site_tools_page_view(state),
     };

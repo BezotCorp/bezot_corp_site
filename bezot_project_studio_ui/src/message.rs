@@ -2,6 +2,7 @@ use crate::card_item_field::CardItemField;
 use crate::editor_target::EditorTarget;
 use crate::editorial_ai_client::{OllamaModel, PostReview};
 use crate::locale::Locale;
+use crate::media_client::MediaAsset;
 use crate::page::Page;
 use crate::page_block_field::PageBlockField;
 use crate::page_field::PageField;
@@ -68,4 +69,10 @@ pub(crate) enum Message {
     DraftGenerated(Box<Result<PostEditorState, String>>),
     RunReview,
     ReviewCompleted(Result<Vec<PostReview>, String>),
+
+    LoadMedia,
+    MediaLoaded(Result<Vec<MediaAsset>, String>),
+    PickAndUploadMedia,
+    MediaUploaded(Result<Option<MediaAsset>, String>),
+    CopyMediaPath(String),
 }

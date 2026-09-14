@@ -49,7 +49,18 @@ cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content p
 cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content page get <page-id>
 cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content page save
 cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content page delete <page-id>
+cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content media list [--format text|json]
+cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content media upload <local-path>
 ```
+
+`content media upload` copies a local image into `site/public/media`, sanitizing
+the file name (lowercased, non-alphanumeric characters collapsed to `-`) and
+appending a numeric suffix instead of overwriting a colliding name. Only
+`png`/`jpg`/`jpeg`/`gif`/`webp`/`svg` extensions are accepted. It prints the
+resulting asset as JSON, including the root-relative `publicPath`
+(`/media/<name>`) that content fields such as `ogImage` expect — `public/` is
+served at the site root by both Vite and the built site, the same way
+`favicon.svg` at `site/public/favicon.svg` is served as `/favicon.svg`.
 
 `content post delete` and `content page delete` remove the content file(s),
 drop the id from the section's index, and — only if the deleted locale was
@@ -81,6 +92,14 @@ required to avoid turning a published URL into a 404.
 It owns the human interface for editing and reviewing site content. It calls
 project tools as executables and must not write content JSON directly when a
 studio-core command exists for that operation.
+
+The "Médias" tab lists uploaded assets (loaded at boot the same way the AI
+tab's model catalogue is) and lets the operator pick a local image through a
+native file dialog (`rfd`) and upload it through `content media upload`, run
+as one `iced::Task` step so the picker and the subprocess call never block
+the UI thread. Each asset's public path has a "Copier le chemin" button
+(`iced::clipboard::write`) so it can be pasted into a post's or page's
+`og_image`/`ogImage` field without retyping it.
 
 The "IA" tab calls `bezot_project_editorial_ai`'s `draft`/`review` commands
 the same way — as a subprocess, parsing their `--format json` output — never
@@ -227,9 +246,6 @@ write path.
 The following are not implemented yet. They are listed here so new work is not
 built on top of an assumed capability that does not exist.
 
-- **No media/image handling in the studio.** Images referenced by content
-  (e.g. `ogImage`) must be placed by hand; there is no upload or asset
-  command.
 - **No analytics integration** anywhere in the repository.
 - **Draft preview is structural, not the site's real rendering.** The
   editors' "Aperçu de lecture" panel composes title/subtitle/paragraphs/

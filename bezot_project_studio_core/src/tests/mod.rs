@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod command_mode;
 #[cfg(test)]
+mod media_asset;
+#[cfg(test)]
 mod output_format;
 #[cfg(test)]
 mod page_deleter;

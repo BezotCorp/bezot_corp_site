@@ -3,15 +3,17 @@ pub(crate) enum Page {
     Dashboard,
     Library,
     Editor,
+    Media,
     Ai,
     SiteTools,
 }
 
 impl Page {
-    pub(crate) const ALL: [Page; 5] = [
+    pub(crate) const ALL: [Page; 6] = [
         Self::Dashboard,
         Self::Library,
         Self::Editor,
+        Self::Media,
         Self::Ai,
         Self::SiteTools,
     ];
@@ -21,6 +23,7 @@ impl Page {
             Self::Dashboard => "Tableau de bord",
             Self::Library => "Bibliothèque",
             Self::Editor => "Éditeur",
+            Self::Media => "Médias",
             Self::Ai => "IA",
             Self::SiteTools => "Site",
         }
