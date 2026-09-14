@@ -71,14 +71,27 @@ pub(crate) fn editor_from_value(value: Value) -> io::Result<PostEditorState> {
         ..PostEditorState::default()
     };
 
-    editor.fr.title = parsed.fr.title;
+    editor.fr.title = unescape_html_entities(&parsed.fr.title);
     editor.fr.slug = parsed.fr.slug;
-    editor.fr.description = parsed.fr.description;
-    editor.fr.paragraph = parsed.fr.paragraph;
-    editor.en.title = parsed.en.title;
+    editor.fr.description = unescape_html_entities(&parsed.fr.description);
+    editor.fr.paragraph = unescape_html_entities(&parsed.fr.paragraph);
+    editor.en.title = unescape_html_entities(&parsed.en.title);
     editor.en.slug = parsed.en.slug;
-    editor.en.description = parsed.en.description;
-    editor.en.paragraph = parsed.en.paragraph;
+    editor.en.description = unescape_html_entities(&parsed.en.description);
+    editor.en.paragraph = unescape_html_entities(&parsed.en.paragraph);
 
     Ok(editor)
+}
+
+/// Some models emit HTML entities (e.g. `&#39;`) instead of the literal
+/// character even when asked for plain text, presumably picked up from
+/// HTML-heavy training data. Undo the common ones so drafts don't ship with
+/// garbled punctuation.
+pub(crate) fn unescape_html_entities(text: &str) -> String {
+    text.replace("&#39;", "'")
+        .replace("&apos;", "'")
+        .replace("&quot;", "\"")
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
 }

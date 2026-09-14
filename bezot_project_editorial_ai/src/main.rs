@@ -15,6 +15,7 @@ use std::env;
 use std::io;
 use std::process::ExitCode;
 
+use common::invalid_data;
 use draft_generator::generate_draft;
 use editorial_audit::audit_editorial_content;
 use editorial_review::review_editorial_content;
@@ -47,12 +48,16 @@ fn run() -> io::Result<()> {
             let model = required_option(options, "--model")?;
             let topic = required_option(options, "--topic")?;
             let editor = generate_draft(&project_root, &model, &topic)?;
-            println!("draft created: {}", editor.id);
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&editor).map_err(invalid_data)?
+            );
             Ok(())
         }
         "review" => {
             let model = required_option(options, "--model")?;
-            review_editorial_content(&project_root, &model)
+            let format = optional_option(options, "--format").unwrap_or_else(|| "text".to_string());
+            review_editorial_content(&project_root, &model, &format)
         }
         value => Err(invalid_input(format!(
             "unknown command \"{value}\"; expected audit, draft, or review"
@@ -61,12 +66,16 @@ fn run() -> io::Result<()> {
 }
 
 fn required_option(options: &[String], name: &str) -> io::Result<String> {
+    optional_option(options, name)
+        .ok_or_else(|| invalid_input(format!("missing required option {name}")))
+}
+
+fn optional_option(options: &[String], name: &str) -> Option<String> {
     options
         .iter()
         .position(|value| value == name)
         .and_then(|index| options.get(index + 1))
         .cloned()
-        .ok_or_else(|| invalid_input(format!("missing required option {name}")))
 }
 
 fn usage_error() -> io::Error {
