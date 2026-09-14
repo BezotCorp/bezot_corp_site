@@ -43,9 +43,9 @@ use editorial_ai_client::{OllamaModel, PostReview};
 use message::Message;
 use page::Page;
 use page_reader::load_page_editor;
-use page_writer::save_page_with_core;
+use page_writer::{delete_page_with_core, save_page_with_core};
 use post_reader::load_post_editor;
-use post_writer::save_post_with_core;
+use post_writer::{delete_post_with_core, save_post_with_core};
 use project_paths::resolve_project_root;
 use studio_core_runner::{run_studio_core, studio_core_failure};
 use studio_state::StudioState;
@@ -65,6 +65,7 @@ fn main() -> Result {
             page_editor: Default::default(),
             editor_target: EditorTarget::Post,
             current_page: Page::Dashboard,
+            confirm_delete: false,
             ai_draft_model: String::new(),
             ai_review_model: String::new(),
             ai_vram_gb: String::new(),
@@ -104,6 +105,7 @@ fn boot_state() -> io::Result<StudioState> {
         page_editor: Default::default(),
         editor_target: EditorTarget::Post,
         current_page: Page::Dashboard,
+        confirm_delete: false,
         ai_draft_model: String::new(),
         ai_review_model: String::new(),
         ai_vram_gb: String::new(),
@@ -234,6 +236,7 @@ fn apply(state: &mut StudioState, message: Message) {
         Message::ShowEditorTarget(target) => {
             state.editor_target = target;
             state.selected_entry_id = None;
+            state.confirm_delete = false;
         }
         Message::ReloadContent => match load_content_entries(&state.project_root) {
             Ok(entries) => {
@@ -254,6 +257,7 @@ fn apply(state: &mut StudioState, message: Message) {
                 .map(|entry| entry.kind.as_str());
 
             state.selected_entry_id = Some(id);
+            state.confirm_delete = false;
             let selected_id = state.selected_entry_id.clone().unwrap_or_default();
 
             match selected_kind {
@@ -292,6 +296,7 @@ fn apply(state: &mut StudioState, message: Message) {
             state.notice = Some("Nouveau brouillon d’article prêt.".to_string());
             state.selected_entry_id = None;
             state.current_page = Page::Editor;
+            state.confirm_delete = false;
             state.error = None;
         }
         Message::NewPage => {
@@ -300,6 +305,7 @@ fn apply(state: &mut StudioState, message: Message) {
             state.notice = Some("Nouvelle page prête.".to_string());
             state.selected_entry_id = None;
             state.current_page = Page::Editor;
+            state.confirm_delete = false;
             state.error = None;
         }
         Message::PrepareSite => match prepare_site(&state.project_root) {
@@ -399,6 +405,34 @@ fn apply(state: &mut StudioState, message: Message) {
                             state.error =
                                 Some(format!("Impossible de recharger le contenu : {error}"));
                         }
+                    }
+                }
+                Err(error) => {
+                    state.error = Some(error.to_string());
+                }
+            }
+        }
+        Message::DeletePost => {
+            if !state.confirm_delete {
+                state.confirm_delete = true;
+                state.notice = Some("Clique à nouveau pour confirmer la suppression.".to_string());
+                state.error = None;
+                return;
+            }
+
+            let post_id = state.post_editor.id.clone();
+            state.confirm_delete = false;
+
+            match delete_post_with_core(&state.project_root, &post_id) {
+                Ok(()) => {
+                    state.notice = Some(format!("Article supprimé : {post_id}."));
+                    state.post_editor = Default::default();
+                    state.selected_entry_id = None;
+                    state.current_page = Page::Library;
+                    state.error = None;
+                    if let Ok(entries) = load_content_entries(&state.project_root) {
+                        state.entries = entries;
+                        state.clamp_page_index();
                     }
                 }
                 Err(error) => {
@@ -506,6 +540,34 @@ fn apply(state: &mut StudioState, message: Message) {
                             state.error =
                                 Some(format!("Impossible de recharger le contenu : {error}"));
                         }
+                    }
+                }
+                Err(error) => {
+                    state.error = Some(error.to_string());
+                }
+            }
+        }
+        Message::DeletePage => {
+            if !state.confirm_delete {
+                state.confirm_delete = true;
+                state.notice = Some("Clique à nouveau pour confirmer la suppression.".to_string());
+                state.error = None;
+                return;
+            }
+
+            let page_id = state.page_editor.id.clone();
+            state.confirm_delete = false;
+
+            match delete_page_with_core(&state.project_root, &page_id) {
+                Ok(()) => {
+                    state.notice = Some(format!("Page supprimée : {page_id}."));
+                    state.page_editor = Default::default();
+                    state.selected_entry_id = None;
+                    state.current_page = Page::Library;
+                    state.error = None;
+                    if let Ok(entries) = load_content_entries(&state.project_root) {
+                        state.entries = entries;
+                        state.clamp_page_index();
                     }
                 }
                 Err(error) => {

@@ -18,7 +18,7 @@ use crate::styles::{
     shell_style, success_color, warning_color,
 };
 use crate::widgets::{
-    card, checklist_line, labeled_input, panel, section_title, stat_bar, status_chip,
+    card, checklist_line, delete_button, labeled_input, panel, section_title, stat_bar, status_chip,
 };
 
 pub(crate) fn view(state: &StudioState) -> Element<'_, Message> {
@@ -486,6 +486,11 @@ fn current_article_banner<'a>(state: &'a StudioState, save_label: &'a str) -> El
             row![
                 button("Nouveau brouillon").on_press(Message::NewPost),
                 button(save_label).on_press(Message::SavePost),
+                delete_button(
+                    state.edited_post_exists(),
+                    state.confirm_delete,
+                    Message::DeletePost
+                ),
             ]
             .spacing(8),
         ]

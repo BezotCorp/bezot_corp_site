@@ -10,7 +10,7 @@ use crate::page_block_field::PageBlockField;
 use crate::page_field::PageField;
 use crate::studio_state::StudioState;
 use crate::styles::accent_panel_style;
-use crate::widgets::{labeled_input, panel, section_title, status_chip};
+use crate::widgets::{delete_button, labeled_input, panel, section_title, status_chip};
 
 pub(crate) fn page_workspace_view(state: &StudioState) -> Element<'_, Message> {
     let editor = &state.page_editor;
@@ -62,6 +62,11 @@ fn current_page_banner<'a>(state: &'a StudioState, save_label: &'a str) -> Eleme
             row![
                 button("Nouvelle page").on_press(Message::NewPage),
                 button(save_label).on_press(Message::SavePage),
+                delete_button(
+                    state.edited_page_exists(),
+                    state.confirm_delete,
+                    Message::DeletePage
+                ),
             ]
             .spacing(8),
         ]

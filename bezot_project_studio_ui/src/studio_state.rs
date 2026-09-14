@@ -22,6 +22,7 @@ pub struct StudioState {
     pub page_editor: PageEditorState,
     pub editor_target: EditorTarget,
     pub current_page: Page,
+    pub confirm_delete: bool,
     pub ai_draft_model: String,
     pub ai_review_model: String,
     pub ai_vram_gb: String,

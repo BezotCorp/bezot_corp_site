@@ -3,6 +3,7 @@ use std::path::Path;
 
 use common::{PageEditorState, invalid_data, invalid_input};
 
+use crate::page_deleter::delete_page;
 use crate::page_reader::load_page_editor;
 use crate::page_writer::save_page;
 
@@ -10,8 +11,9 @@ pub fn run_content_page_command(project_root: &Path, args: &[String]) -> io::Res
     match args {
         [command, page_id] if command == "get" => print_page(project_root, page_id),
         [command] if command == "save" => save_page_from_stdin(project_root),
+        [command, page_id] if command == "delete" => delete_page(project_root, page_id),
         _ => Err(invalid_input(
-            "usage: content page get <page-id> | content page save",
+            "usage: content page get <page-id> | content page save | content page delete <page-id>",
         )),
     }
 }

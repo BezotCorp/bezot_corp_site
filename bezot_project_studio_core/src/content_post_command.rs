@@ -3,6 +3,7 @@ use std::path::Path;
 
 use common::{PostEditorState, PostQualityReport, invalid_data, invalid_input};
 
+use crate::post_deleter::delete_post;
 use crate::post_reader::load_post_editor;
 use crate::post_writer::save_post;
 
@@ -11,8 +12,9 @@ pub fn run_content_post_command(project_root: &Path, args: &[String]) -> io::Res
         [command, post_id] if command == "get" => print_post(project_root, post_id),
         [command, post_id] if command == "quality" => print_quality(project_root, post_id),
         [command] if command == "save" => save_post_from_stdin(project_root),
+        [command, post_id] if command == "delete" => delete_post(project_root, post_id),
         _ => Err(invalid_input(
-            "usage: content post get <post-id> | content post quality <post-id> | content post save",
+            "usage: content post get <post-id> | content post quality <post-id> | content post save | content post delete <post-id>",
         )),
     }
 }

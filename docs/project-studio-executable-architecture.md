@@ -45,9 +45,21 @@ cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content l
 cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content post get <post-id>
 cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content post quality <post-id>
 cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content post save
+cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content post delete <post-id>
 cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content page get <page-id>
 cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content page save
+cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content page delete <page-id>
 ```
+
+`content post delete` and `content page delete` remove the content file(s),
+drop the id from the section's index, and — only if the deleted locale was
+`published` — append its route to `site/content/gone-routes.json` (HTTP 410),
+so a deleted piece of live content leaves a deliberate signal instead of an
+unexplained 404. `content page delete` refuses to delete the page id set as
+`homePageId` or the blog's `entryPageId` in `content/index.json`, since
+either would break the site build with no obvious pointer back to this rule.
+The studio UI's delete button requires a second confirming click before it
+sends the command.
 
 `bezot_project_studio_ui` now edits both content kinds: selecting a page in
 the library loads it into a dedicated block editor (add, remove, and reorder
@@ -215,8 +227,6 @@ write path.
 The following are not implemented yet. They are listed here so new work is not
 built on top of an assumed capability that does not exist.
 
-- **No content deletion.** No command or UI action removes a page or post;
-  only build output cleanup exists (`bezot_project_assembler/src/prebuild_writer.rs`).
 - **No media/image handling in the studio.** Images referenced by content
   (e.g. `ogImage`) must be placed by hand; there is no upload or asset
   command.

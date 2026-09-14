@@ -1,4 +1,4 @@
-use iced::widget::{column, container, row, text, text_input};
+use iced::widget::{button, column, container, row, text, text_input};
 use iced::{Color, Element, Fill, Length};
 
 use crate::message::Message;
@@ -51,6 +51,28 @@ pub(crate) fn labeled_input<'a>(
     .spacing(5)
     .width(Fill)
     .into()
+}
+
+/// A delete button that only appears once the content actually exists on
+/// disk (nothing to delete for a brand-new, unsaved draft) and asks for a
+/// second click ("Confirmer la suppression") before firing — deleting
+/// content should never be a single accidental click away.
+pub(crate) fn delete_button(
+    exists: bool,
+    confirm_delete: bool,
+    message: Message,
+) -> Element<'static, Message> {
+    if !exists {
+        return column![].into();
+    }
+
+    let label = if confirm_delete {
+        "Confirmer la suppression"
+    } else {
+        "Supprimer"
+    };
+
+    button(label).on_press(message).into()
 }
 
 const STAT_BAR_TRACK_WIDTH: f32 = 220.0;
