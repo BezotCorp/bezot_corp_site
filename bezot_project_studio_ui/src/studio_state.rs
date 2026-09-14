@@ -22,7 +22,9 @@ pub struct StudioState {
     pub page_editor: PageEditorState,
     pub editor_target: EditorTarget,
     pub current_page: Page,
-    pub ai_model: String,
+    pub ai_draft_model: String,
+    pub ai_review_model: String,
+    pub ai_vram_gb: String,
     pub ai_topic: String,
     pub ai_task: AiTask,
     pub ai_models: Vec<OllamaModel>,
@@ -89,6 +91,10 @@ impl StudioState {
         self.entries
             .iter()
             .any(|entry| entry.kind == "page" && entry.id == self.page_editor.id)
+    }
+
+    pub(crate) fn ai_vram_gb(&self) -> Option<f64> {
+        self.ai_vram_gb.trim().replace(',', ".").parse().ok()
     }
 }
 

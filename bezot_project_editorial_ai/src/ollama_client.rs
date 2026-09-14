@@ -8,13 +8,23 @@ const OLLAMA_GENERATE_ENDPOINT: &str = "http://localhost:11434/api/generate";
 const OLLAMA_TAGS_ENDPOINT: &str = "http://localhost:11434/api/tags";
 
 /// A model already pulled locally (`ollama list`), as reported by Ollama's
-/// `/api/tags` endpoint. `parameter_size` is surfaced so a caller can show
-/// the operator roughly how much VRAM a model needs before they pick one.
+/// `/api/tags` endpoint. `size_bytes` is the on-disk size of the quantized
+/// weights, which is also the closest available proxy for the VRAM it needs
+/// once loaded — good enough to warn a caller before they pick a model that
+/// will not fit and swap. `capabilities` and `family` let a caller flag
+/// models specialized for code (fill-in-the-middle "insert" capability, or
+/// a "coder" name) as a weaker fit for prose generation.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct OllamaModel {
     pub name: String,
     #[serde(default)]
     pub parameter_size: String,
+    #[serde(default)]
+    pub family: String,
+    #[serde(default)]
+    pub size_bytes: u64,
+    #[serde(default)]
+    pub capabilities: Vec<String>,
 }
 
 /// Lists every model already pulled locally. Never contacts a hosted API.
@@ -29,8 +39,15 @@ pub fn list_models() -> io::Result<Vec<OllamaModel>> {
             name: entry.name,
             parameter_size: entry
                 .details
-                .map(|details| details.parameter_size)
+                .as_ref()
+                .map(|details| details.parameter_size.clone())
                 .unwrap_or_default(),
+            family: entry
+                .details
+                .map(|details| details.family)
+                .unwrap_or_default(),
+            size_bytes: entry.size,
+            capabilities: entry.capabilities,
         })
         .collect())
 }
@@ -44,13 +61,19 @@ struct OllamaTagsResponse {
 struct OllamaTagsModel {
     name: String,
     #[serde(default)]
+    size: u64,
+    #[serde(default)]
     details: Option<OllamaTagsModelDetails>,
+    #[serde(default)]
+    capabilities: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
 struct OllamaTagsModelDetails {
     #[serde(default)]
     parameter_size: String,
+    #[serde(default)]
+    family: String,
 }
 
 fn tags_error(error: ureq::Error) -> io::Error {

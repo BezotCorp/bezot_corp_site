@@ -24,6 +24,7 @@ mod studio_core_runner;
 mod studio_state;
 mod studio_view;
 mod styles;
+mod vram_fit;
 mod widgets;
 
 #[cfg(test)]
@@ -64,7 +65,9 @@ fn main() -> Result {
             page_editor: Default::default(),
             editor_target: EditorTarget::Post,
             current_page: Page::Dashboard,
-            ai_model: String::new(),
+            ai_draft_model: String::new(),
+            ai_review_model: String::new(),
+            ai_vram_gb: String::new(),
             ai_topic: String::new(),
             ai_task: AiTask::default(),
             ai_models: Vec::new(),
@@ -85,6 +88,10 @@ fn boot_state() -> io::Result<StudioState> {
     let project_root_argument = project_root_argument(&args)?;
     let project_root = resolve_project_root(project_root_argument)?;
     let entries = load_content_entries(&project_root)?;
+    // Best-effort: a model catalogue that fails to load (Ollama not running
+    // yet, say) must not block the rest of the studio from starting. The
+    // "Actualiser la liste" button in the IA tab covers the retry.
+    let ai_models = editorial_ai_client::list_models(&project_root).unwrap_or_default();
 
     Ok(StudioState {
         project_root,
@@ -97,10 +104,12 @@ fn boot_state() -> io::Result<StudioState> {
         page_editor: Default::default(),
         editor_target: EditorTarget::Post,
         current_page: Page::Dashboard,
-        ai_model: String::new(),
+        ai_draft_model: String::new(),
+        ai_review_model: String::new(),
+        ai_vram_gb: String::new(),
         ai_topic: String::new(),
         ai_task: AiTask::default(),
-        ai_models: Vec::new(),
+        ai_models,
         ai_reviews: Vec::new(),
         notice: None,
         error: None,
@@ -124,7 +133,7 @@ fn update(state: &mut StudioState, message: Message) -> Task<Message> {
             state.error = None;
             state.notice = None;
             let project_root = state.project_root.clone();
-            let model = state.ai_model.clone();
+            let model = state.ai_draft_model.clone();
             let topic = state.ai_topic.clone();
             Task::perform(generate_draft_async(project_root, model, topic), |result| {
                 Message::DraftGenerated(Box::new(result))
@@ -135,7 +144,7 @@ fn update(state: &mut StudioState, message: Message) -> Task<Message> {
             state.error = None;
             state.notice = None;
             let project_root = state.project_root.clone();
-            let model = state.ai_model.clone();
+            let model = state.ai_review_model.clone();
             Task::perform(
                 run_review_async(project_root, model),
                 Message::ReviewCompleted,
@@ -180,7 +189,9 @@ fn apply(state: &mut StudioState, message: Message) {
         Message::GenerateDraft | Message::RunReview | Message::LoadModels => {
             unreachable!("intercepted in update() before reaching apply()")
         }
-        Message::AiModelChanged(value) => state.ai_model = value,
+        Message::AiDraftModelChanged(value) => state.ai_draft_model = value,
+        Message::AiReviewModelChanged(value) => state.ai_review_model = value,
+        Message::AiVramChanged(value) => state.ai_vram_gb = value,
         Message::AiTopicChanged(value) => state.ai_topic = value,
         Message::ModelsLoaded(result) => {
             state.ai_task = AiTask::Idle;

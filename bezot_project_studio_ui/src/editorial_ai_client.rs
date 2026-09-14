@@ -20,20 +20,33 @@ pub(crate) struct PostReview {
 /// `common`: this is just the wire shape of the `models` command's JSON
 /// output, the same way `ContentEntry` is duplicated per crate rather than
 /// shared for `content list`.
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Deserialize, PartialEq)]
 pub(crate) struct OllamaModel {
     pub(crate) name: String,
     #[serde(default)]
     pub(crate) parameter_size: String,
+    #[serde(default)]
+    pub(crate) family: String,
+    #[serde(default)]
+    pub(crate) size_bytes: u64,
+    #[serde(default)]
+    pub(crate) capabilities: Vec<String>,
 }
 
-impl std::fmt::Display for OllamaModel {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.parameter_size.is_empty() {
-            write!(formatter, "{}", self.name)
-        } else {
-            write!(formatter, "{} ({})", self.name, self.parameter_size)
-        }
+impl OllamaModel {
+    pub(crate) fn size_gb(&self) -> f64 {
+        self.size_bytes as f64 / 1_000_000_000.0
+    }
+
+    /// A model whose name says "coder" or that advertises the
+    /// fill-in-the-middle "insert" capability is tuned for source code, not
+    /// prose — a weaker fit for drafting a blog article.
+    pub(crate) fn is_code_specialized(&self) -> bool {
+        self.name.to_lowercase().contains("coder")
+            || self
+                .capabilities
+                .iter()
+                .any(|capability| capability == "insert")
     }
 }
 

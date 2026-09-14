@@ -96,21 +96,28 @@ Initial commands:
 cargo run --manifest-path bezot_project_editorial_ai/Cargo.toml -- site audit
 cargo run --manifest-path bezot_project_editorial_ai/Cargo.toml -- site draft --model <name> --topic "<topic>"
 cargo run --manifest-path bezot_project_editorial_ai/Cargo.toml -- site review --model <name>
+cargo run --manifest-path bezot_project_editorial_ai/Cargo.toml -- site models
 ```
 
-`draft` and `review` call a local Ollama server (`http://localhost:11434`),
-never a hosted API — `--model` must name a model already pulled locally
-(`ollama list`). `draft` asks the model for a bilingual post (title, slug,
-SEO description, paragraph per locale) and saves it through
-`content post save`, exactly as the studio UI would; the id is prefixed
-`ai-editorial-` so `audit` picks it up. `review` fetches every published
-post's full content through `content post get` (never reads post JSON
-directly) and asks the model for a per-locale SEO score, an update flag, and
-concrete suggestions — output only, no writes.
+`draft`, `review`, and `models` all call a local Ollama server
+(`http://localhost:11434`), never a hosted API. `models` lists what is
+already pulled (`ollama list`), including each model's on-disk size and
+capabilities — the closest available proxy for its VRAM footprint, and the
+only reliable way to tell a code-specialized model (fill-in-the-middle
+`insert` capability, or a "coder" name) from a general one. `draft` asks the
+model for a bilingual post (title, slug, SEO description, paragraph per
+locale) and saves it through `content post save`, exactly as the studio UI
+would; the id is prefixed `ai-editorial-` so `audit` picks it up. `review`
+fetches every published post's full content through `content post get`
+(never reads post JSON directly) and asks the model for a per-locale SEO
+score, an update flag, and concrete suggestions — output only, no writes.
 
-There is no hardcoded default model: pick one that fits your available VRAM
-(a 7B–14B quantized model is a reasonable starting point; a 30B+ model may
-not leave headroom for anything else running locally).
+There is no hardcoded default model, and drafting and reviewing are not
+forced to share one: `bezot_project_studio_ui`'s IA tab lets the operator
+pick a model per task from the real local catalogue, shows each model's
+size against a VRAM budget the operator enters (flagging "too large, will
+swap" before they waste a run), and flags code-specialized models as a
+weaker fit for prose drafting.
 
 ### `bezot_project_assembler`
 

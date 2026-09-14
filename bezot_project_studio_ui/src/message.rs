@@ -51,7 +51,9 @@ pub(crate) enum Message {
     RemoveCardItem(Locale, usize, usize),
     CardItemFieldChanged(Locale, usize, usize, CardItemField, String),
 
-    AiModelChanged(String),
+    AiDraftModelChanged(String),
+    AiReviewModelChanged(String),
+    AiVramChanged(String),
     AiTopicChanged(String),
     LoadModels,
     ModelsLoaded(Result<Vec<OllamaModel>, String>),
