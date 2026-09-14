@@ -450,6 +450,7 @@ fn post_workspace_view(state: &StudioState) -> Element<'_, Message> {
                 column![
                     section_title("Pilotage"),
                     editorial_score_view(&report),
+                    reading_preview_view(editor),
                     publication_preview_view(editor, &report),
                     recommendations_view(&report),
                 ]
@@ -708,6 +709,65 @@ fn editorial_score_view(report: &PostQualityReport) -> Element<'static, Message>
         ]
         .spacing(8),
     )
+}
+
+/// A structured reading preview: the composed title/subtitle/paragraphs/
+/// affiliate callout as they will read once published, in the order the
+/// real hero/paragraph/affiliate_callout blocks render them. Not the site's
+/// actual CSS-styled output — the pipeline that produces that excludes
+/// unpublished content from prerendering entirely, so there is no live URL
+/// to preview a draft at yet. This is the fast, always-available substitute:
+/// good enough to proofread flow and framing before publication.
+fn reading_preview_view(editor: &PostEditorState) -> Element<'_, Message> {
+    panel(
+        column![
+            text("Aperçu de lecture").size(16),
+            locale_reading_preview("Français", &editor.fr),
+            locale_reading_preview("English", &editor.en),
+        ]
+        .spacing(14),
+    )
+}
+
+fn locale_reading_preview<'a>(
+    label: &'a str,
+    editor: &'a PostLocaleEditor,
+) -> Element<'a, Message> {
+    let mut content = column![
+        status_chip(label.to_string()),
+        text(editor.title.clone()).size(20),
+    ]
+    .spacing(6);
+
+    if !editor.subtitle.trim().is_empty() {
+        content = content.push(text(editor.subtitle.clone()).size(13));
+    }
+
+    for paragraph in &editor.paragraphs {
+        content = content.push(text(paragraph.clone()).size(13));
+    }
+
+    if !editor.affiliate_url.trim().is_empty() {
+        content = content.push(affiliate_reading_preview(editor));
+    }
+
+    content.into()
+}
+
+fn affiliate_reading_preview(editor: &PostLocaleEditor) -> Element<'_, Message> {
+    container(
+        column![
+            text(editor.affiliate_disclosure.clone()).size(11),
+            text(editor.affiliate_title.clone()).size(15),
+            text(editor.affiliate_text.clone()).size(13),
+            status_chip(editor.affiliate_label.clone()),
+        ]
+        .spacing(6),
+    )
+    .padding(10)
+    .width(Fill)
+    .style(accent_panel_style)
+    .into()
 }
 
 fn publication_preview_view(

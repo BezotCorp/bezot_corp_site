@@ -122,6 +122,7 @@ fn page_locale_view<'a>(
             ]
             .spacing(10),
             seo_editor_view(editor, locale),
+            reading_preview_view(&editor.blocks),
             block_list_view(locale, &editor.blocks),
         ]
         .spacing(10),
@@ -172,6 +173,80 @@ fn page_field_input<'a>(
     labeled_input(label, value, move |value| {
         Message::PageFieldChanged(locale, field, value)
     })
+}
+
+/// A structured reading preview of every block in order, e.g. so an editor
+/// can proofread flow and framing without switching to the block-editing
+/// form below. Not the site's actual CSS-styled output — the build pipeline
+/// excludes unpublished pages from prerendering entirely, so there is no
+/// live URL to preview a draft page at yet.
+fn reading_preview_view(blocks: &[PageBlock]) -> Element<'_, Message> {
+    let mut list = column![text("Aperçu de lecture").size(16)].spacing(8);
+
+    if blocks.is_empty() {
+        list = list.push(text("Aucun bloc pour le moment.").size(13));
+        return panel(list);
+    }
+
+    for block in blocks {
+        list = list.push(block_reading_preview(block));
+    }
+
+    panel(list)
+}
+
+fn block_reading_preview(block: &PageBlock) -> Element<'_, Message> {
+    match block {
+        PageBlock::Hero { title, subtitle } => {
+            let mut content = column![text(title.clone()).size(20)].spacing(4);
+            if !subtitle.trim().is_empty() {
+                content = content.push(text(subtitle.clone()).size(13));
+            }
+            content.into()
+        }
+        PageBlock::Paragraph { text: value } => text(value.clone()).size(13).into(),
+        PageBlock::MailLink { email, label } => {
+            let shown_label = if label.trim().is_empty() {
+                email
+            } else {
+                label
+            };
+            text(format!("✉ {shown_label} ({email})")).size(13).into()
+        }
+        PageBlock::CardGrid { items } => {
+            let mut grid = column![].spacing(6);
+            for item in items {
+                grid = grid.push(
+                    column![
+                        text(item.title.clone()).size(14),
+                        text(item.text.clone()).size(12),
+                    ]
+                    .spacing(2),
+                );
+            }
+            grid.into()
+        }
+        PageBlock::AffiliateCallout {
+            title,
+            text: body,
+            label,
+            disclosure,
+            ..
+        } => container(
+            column![
+                text(disclosure.clone()).size(11),
+                text(title.clone()).size(15),
+                text(body.clone()).size(13),
+                status_chip(label.clone()),
+            ]
+            .spacing(6),
+        )
+        .padding(10)
+        .width(Fill)
+        .style(accent_panel_style)
+        .into(),
+        PageBlock::PostList { .. } => text("[Liste d’articles publiés]").size(12).into(),
+    }
 }
 
 fn block_list_view(locale: Locale, blocks: &[PageBlock]) -> Element<'_, Message> {

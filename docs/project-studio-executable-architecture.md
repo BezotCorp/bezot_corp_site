@@ -230,10 +230,15 @@ built on top of an assumed capability that does not exist.
 - **No media/image handling in the studio.** Images referenced by content
   (e.g. `ogImage`) must be placed by hand; there is no upload or asset
   command.
-- **No real draft preview link.** The "Pilotage" panel in the editor shows an
-  editorial quality score, not a URL a reviewer can open to see the rendered
-  draft before it is published.
 - **No analytics integration** anywhere in the repository.
+- **Draft preview is structural, not the site's real rendering.** The
+  editors' "Aperçu de lecture" panel composes title/subtitle/paragraphs/
+  blocks in order so an author can proofread flow before publishing, but it
+  is not the site's actual CSS-styled output. Prerendering excludes
+  unpublished content entirely (see `project-checks.md`), so there is no
+  live URL for a draft even for a human author today — building one would
+  mean assembling an isolated copy of the site with the draft temporarily
+  marked published, which is a larger, separate piece of work.
 
 ## Rationale
 
