@@ -45,18 +45,21 @@ cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content l
 cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content post get <post-id>
 cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content post quality <post-id>
 cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content post save
+cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content page get <page-id>
+cargo run --manifest-path bezot_project_studio_core/Cargo.toml -- site content page save
 ```
 
-There is no `content page` command yet: page content (as opposed to blog posts) cannot
-be created or edited through `bezot_project_studio_core` or `bezot_project_studio_ui`.
+`content page get|save` is not wired into `bezot_project_studio_ui` yet: the
+executable can create and edit page content, but the Iced UI still cannot.
 See [Known gaps](#known-gaps).
 
-`content post save` compares the post's previously stored slug (per locale)
-against the incoming one before writing anything. If a slug changed, it
-appends a 301 entry from the old path to the new one to
-`site/content/redirects.json` (skipped if an entry for that old path already
-exists, so a manually curated redirect is never overwritten). This makes
-slug changes safe by default: no separate step is required to avoid turning
+`content post save` and `content page save` both compare the entry's
+previously stored slug (per locale) against the incoming one before writing
+anything. If a slug changed, they append a 301 entry from the old path to
+the new one to `site/content/redirects.json` (skipped if an entry for that
+old path already exists, so a manually curated redirect is never
+overwritten). This makes slug changes safe by default: no separate step is
+required to avoid turning
 a published URL into a 404.
 
 ### `bezot_project_studio_ui`
@@ -183,15 +186,12 @@ write path.
 The following are not implemented yet. They are listed here so new work is not
 built on top of an assumed capability that does not exist.
 
-- **Page editing.** Only blog posts have an executable-backed create/edit path
-  (`content post get|quality|save`). Pages are composed of an arbitrary
-  ordered array of typed blocks validated against `blocks.ron`
-  (`bezot_project_assembler/src/content_validator.rs`), a structurally
-  different and larger problem than the fixed post schema. Today the only way
-  to create or edit a page is to hand-edit
-  `site/content/pages/<id>/index.json` and its locale files directly, which
-  the UI boundary above forbids for any content a command already covers —
-  pages are the one content kind with no covering command yet.
+- **Page editing has no UI yet.** `content page get|save` exists and covers
+  the full page schema — an ordered array of typed blocks validated against
+  `blocks.ron` (`bezot_project_assembler/src/content_validator.rs`):
+  `hero`, `paragraph`, `mail_link`, `card_grid`, `affiliate_callout`, and
+  `post_list` (`common::PageBlock`). `bezot_project_studio_ui` does not call
+  it yet, so pages can only be created or edited from the terminal today.
 - **No content deletion.** No command or UI action removes a page or post;
   only build output cleanup exists (`bezot_project_assembler/src/prebuild_writer.rs`).
 - **No media/image handling in the studio.** Images referenced by content

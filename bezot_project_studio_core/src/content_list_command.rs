@@ -13,11 +13,14 @@ pub fn run_content_command(project_root: &Path, args: &[String]) -> io::Result<(
         Some("post") => {
             crate::content_post_command::run_content_post_command(project_root, &args[1..])
         }
+        Some("page") => {
+            crate::content_page_command::run_content_page_command(project_root, &args[1..])
+        }
         Some(value) => Err(invalid_input(format!(
-            "unknown content command \"{value}\"; expected list or post"
+            "unknown content command \"{value}\"; expected list, post, or page"
         ))),
         None => Err(invalid_input(
-            "missing content command; expected list or post",
+            "missing content command; expected list, post, or page",
         )),
     }
 }
