@@ -204,6 +204,23 @@ Required concepts:
 Do not describe the common operation as "local" or as "production-only". It is
 the same final-site preparation used before preview and before publication.
 
+## Analytics and consent
+
+`site/index.html` loads Google Tag Manager (container `GTM-WZRQ8MGG`), gated
+by the InMobi TCF 2.3 consent banner already present in the same file:
+
+- `gtag('consent', 'default', …)` denies `analytics_storage`/`ad_storage`
+  (Google Consent Mode v2) before the GTM snippet loads, so every tag inside
+  the container starts in a privacy-safe state.
+- A small bridge script listens to InMobi's `__tcfapi` and only calls
+  `gtag('consent', 'update', …)` once the visitor has actually granted the
+  relevant TCF purposes (purpose 1 plus 7-10 for analytics; 1-4 for ads).
+
+No tag inside the GTM container (GA4 or otherwise) is configured from this
+repository — that lives in the Tag Manager web UI, outside this codebase's
+reach. This repository is only responsible for loading GTM correctly and
+respecting consent before it fires.
+
 ## Publication
 
 Preparing the final site does not publish by itself.
@@ -246,7 +263,6 @@ write path.
 The following are not implemented yet. They are listed here so new work is not
 built on top of an assumed capability that does not exist.
 
-- **No analytics integration** anywhere in the repository.
 - **Draft preview is structural, not the site's real rendering.** The
   editors' "Aperçu de lecture" panel composes title/subtitle/paragraphs/
   blocks in order so an author can proofread flow before publishing, but it
