@@ -39,12 +39,29 @@ fn validate_editor(editor: &PostEditorState) -> io::Result<()> {
     validate_required("L’auteur", &editor.author)?;
     validate_required("Le titre français", &editor.fr.title)?;
     validate_required("Le slug français", &editor.fr.slug)?;
-    validate_required("Le paragraphe français", &editor.fr.paragraph)?;
+    validate_paragraphs("français", &editor.fr.paragraphs)?;
     validate_required("Le titre anglais", &editor.en.title)?;
     validate_required("Le slug anglais", &editor.en.slug)?;
-    validate_required("Le paragraphe anglais", &editor.en.paragraph)?;
+    validate_paragraphs("anglais", &editor.en.paragraphs)?;
     validate_affiliate_fields("français", &editor.fr)?;
     validate_affiliate_fields("anglais", &editor.en)
+}
+
+fn validate_paragraphs(locale_label: &str, paragraphs: &[String]) -> io::Result<()> {
+    if paragraphs.is_empty() {
+        return Err(invalid_input(format!(
+            "L’article doit contenir au moins un paragraphe ({locale_label})"
+        )));
+    }
+
+    for (index, paragraph) in paragraphs.iter().enumerate() {
+        validate_required(
+            &format!("Le paragraphe {index} ({locale_label})"),
+            paragraph,
+        )?;
+    }
+
+    Ok(())
 }
 
 fn validate_required(label: &str, value: &str) -> io::Result<()> {

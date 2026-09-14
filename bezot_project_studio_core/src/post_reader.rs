@@ -68,7 +68,7 @@ fn locale_editor_from_value(locale: &Value) -> io::Result<PostLocaleEditor> {
             .and_then(Value::as_str)
             .unwrap_or("")
             .to_string(),
-        paragraph: first_paragraph(locale).unwrap_or_default(),
+        paragraphs: all_paragraphs(locale),
         affiliate_title: affiliate_field(locale, "title").unwrap_or_default(),
         affiliate_text: affiliate_field(locale, "text").unwrap_or_default(),
         affiliate_url: affiliate_field(locale, "url").unwrap_or_default(),
@@ -77,16 +77,17 @@ fn locale_editor_from_value(locale: &Value) -> io::Result<PostLocaleEditor> {
     })
 }
 
-fn first_paragraph(locale: &Value) -> Option<String> {
-    locale
-        .get("blocks")?
-        .as_array()?
+fn all_paragraphs(locale: &Value) -> Vec<String> {
+    let Some(blocks) = locale.get("blocks").and_then(Value::as_array) else {
+        return Vec::new();
+    };
+
+    blocks
         .iter()
-        .find(|block| block.get("type").and_then(Value::as_str) == Some("paragraph"))?
-        .get("props")?
-        .get("text")?
-        .as_str()
+        .filter(|block| block.get("type").and_then(Value::as_str) == Some("paragraph"))
+        .filter_map(|block| block.get("props")?.get("text")?.as_str())
         .map(str::to_string)
+        .collect()
 }
 
 fn hero_field(locale: &Value, field: &str) -> Option<String> {

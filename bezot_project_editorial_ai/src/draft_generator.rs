@@ -42,13 +42,13 @@ Rédige un texte d'opinion/analyse bilingue (français et anglais) sur ce sujet 
 \n\
 Réponds STRICTEMENT avec un objet JSON de cette forme exacte, sans aucun texte avant ou après :\n\
 {{\n\
-  \"fr\": {{\"title\": \"...\", \"slug\": \"blog/...\", \"description\": \"...\", \"paragraph\": \"...\"}},\n\
-  \"en\": {{\"title\": \"...\", \"slug\": \"blog/...\", \"description\": \"...\", \"paragraph\": \"...\"}}\n\
+  \"fr\": {{\"title\": \"...\", \"slug\": \"blog/...\", \"description\": \"...\", \"paragraphs\": [\"...\", \"...\", \"...\"]}},\n\
+  \"en\": {{\"title\": \"...\", \"slug\": \"blog/...\", \"description\": \"...\", \"paragraphs\": [\"...\", \"...\", \"...\"]}}\n\
 }}\n\
 \n\
 Contraintes :\n\
 - \"title\" : le sujet de l'édito SANS préfixe (le préfixe « Édito IA : » est ajouté automatiquement ensuite), clair et spécifique, sans emoji.\n\
-- \"paragraph\" : au moins 150 mots, argumenté et concret, pas de remplissage.\n\
+- \"paragraphs\" : 3 à 5 paragraphes distincts, chacun une idée ou un argument, 40 à 90 mots chacun, pas de remplissage. Ne pas tout mettre dans un seul paragraphe.\n\
 - \"description\" : entre 80 et 180 caractères, résume la thèse de l'édito.\n\
 - \"slug\" : minuscules, tirets, préfixé par \"blog/\", cohérent entre fr et en pour le même sujet."
     )
@@ -65,7 +65,7 @@ struct DraftLocale {
     title: String,
     slug: String,
     description: String,
-    paragraph: String,
+    paragraphs: Vec<String>,
 }
 
 pub(crate) fn editor_from_value(value: Value) -> io::Result<PostEditorState> {
@@ -86,7 +86,7 @@ pub(crate) fn editor_from_value(value: Value) -> io::Result<PostEditorState> {
     editor.fr.subtitle = FR_DISCLOSURE.to_string();
     editor.fr.slug = parsed.fr.slug;
     editor.fr.description = unescape_html_entities(&parsed.fr.description);
-    editor.fr.paragraph = unescape_html_entities(&parsed.fr.paragraph);
+    editor.fr.paragraphs = unescape_paragraphs(parsed.fr.paragraphs);
     editor.en.title = format!(
         "{EN_TITLE_PREFIX}{}",
         unescape_html_entities(&parsed.en.title)
@@ -94,9 +94,16 @@ pub(crate) fn editor_from_value(value: Value) -> io::Result<PostEditorState> {
     editor.en.subtitle = EN_DISCLOSURE.to_string();
     editor.en.slug = parsed.en.slug;
     editor.en.description = unescape_html_entities(&parsed.en.description);
-    editor.en.paragraph = unescape_html_entities(&parsed.en.paragraph);
+    editor.en.paragraphs = unescape_paragraphs(parsed.en.paragraphs);
 
     Ok(editor)
+}
+
+fn unescape_paragraphs(paragraphs: Vec<String>) -> Vec<String> {
+    paragraphs
+        .iter()
+        .map(|paragraph| unescape_html_entities(paragraph))
+        .collect()
 }
 
 /// Some models emit HTML entities (e.g. `&#39;`) instead of the literal

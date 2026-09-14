@@ -39,7 +39,13 @@ fn loads_existing_post_into_editor_state() {
         {
           "type": "paragraph",
           "props": {
-            "text": "Paragraphe FR"
+            "text": "Paragraphe FR un"
+          }
+        },
+        {
+          "type": "paragraph",
+          "props": {
+            "text": "Paragraphe FR deux"
           }
         }
       ]
@@ -69,9 +75,15 @@ fn loads_existing_post_into_editor_state() {
 
     assert_eq!(editor.id, "sample-post");
     assert_eq!(editor.fr.title, "Article exemple");
-    assert_eq!(editor.fr.paragraph, "Paragraphe FR");
+    assert_eq!(
+        editor.fr.paragraphs,
+        vec![
+            "Paragraphe FR un".to_string(),
+            "Paragraphe FR deux".to_string()
+        ]
+    );
     assert_eq!(editor.en.title, "Sample post");
-    assert_eq!(editor.en.paragraph, "English paragraph");
+    assert_eq!(editor.en.paragraphs, vec!["English paragraph".to_string()]);
 
     fs::remove_dir_all(project_root).unwrap();
 }

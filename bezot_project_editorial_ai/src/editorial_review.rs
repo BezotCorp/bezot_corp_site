@@ -53,19 +53,11 @@ fn collect_reviews(project_root: &Path, model: &str) -> io::Result<Vec<PostRevie
             }
         };
 
+        let fr_body = editor.fr.paragraphs.join("\n\n");
+        let en_body = editor.en.paragraphs.join("\n\n");
         let locales = [
-            (
-                "fr-fr",
-                &editor.fr.title,
-                &editor.fr.description,
-                &editor.fr.paragraph,
-            ),
-            (
-                "en-us",
-                &editor.en.title,
-                &editor.en.description,
-                &editor.en.paragraph,
-            ),
+            ("fr-fr", &editor.fr.title, &editor.fr.description, &fr_body),
+            ("en-us", &editor.en.title, &editor.en.description, &en_body),
         ];
 
         for (locale, title, description, paragraph) in locales {

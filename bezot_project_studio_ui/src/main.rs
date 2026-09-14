@@ -355,6 +355,35 @@ fn apply(state: &mut StudioState, message: Message) {
             *post_field::field_mut(locale::locale_mut(&mut state.post_editor, locale), field) =
                 value;
         }
+        Message::AddParagraph(locale) => {
+            locale::locale_mut(&mut state.post_editor, locale)
+                .paragraphs
+                .push(String::new());
+        }
+        Message::RemoveParagraph(locale, index) => {
+            let paragraphs = &mut locale::locale_mut(&mut state.post_editor, locale).paragraphs;
+            if index < paragraphs.len() {
+                paragraphs.remove(index);
+            }
+        }
+        Message::MoveParagraphUp(locale, index) => {
+            let paragraphs = &mut locale::locale_mut(&mut state.post_editor, locale).paragraphs;
+            if index > 0 && index < paragraphs.len() {
+                paragraphs.swap(index - 1, index);
+            }
+        }
+        Message::MoveParagraphDown(locale, index) => {
+            let paragraphs = &mut locale::locale_mut(&mut state.post_editor, locale).paragraphs;
+            if index + 1 < paragraphs.len() {
+                paragraphs.swap(index, index + 1);
+            }
+        }
+        Message::ParagraphChanged(locale, index, value) => {
+            let paragraphs = &mut locale::locale_mut(&mut state.post_editor, locale).paragraphs;
+            if let Some(paragraph) = paragraphs.get_mut(index) {
+                *paragraph = value;
+            }
+        }
         Message::SavePost => {
             let existed_before_save = state.edited_post_exists();
             match save_post_with_core(&state.project_root, &state.post_editor) {
@@ -498,10 +527,12 @@ fn apply_seo_template(editor: &mut PostEditorState) {
         "Un article Bezot Corp conçu pour répondre clairement à une question précise et améliorer la visibilité organique du site.".to_string();
     editor.en.description =
         "A Bezot Corp article designed to answer a focused question clearly and improve the site's organic visibility.".to_string();
-    editor.fr.paragraph =
-        "Commence par une réponse directe au problème du lecteur, puis développe les critères de décision, les limites et les étapes concrètes à suivre. L’objectif est de publier un contenu utile, compréhensible et assez précis pour être référencé sur une requête longue traîne.".to_string();
-    editor.en.paragraph =
-        "Start with a direct answer to the reader's problem, then explain the decision criteria, the limits, and the concrete next steps. The goal is to publish useful, understandable, and precise content that can rank for a long-tail query.".to_string();
+    editor.fr.paragraphs = vec![
+        "Commence par une réponse directe au problème du lecteur, puis développe les critères de décision, les limites et les étapes concrètes à suivre. L’objectif est de publier un contenu utile, compréhensible et assez précis pour être référencé sur une requête longue traîne.".to_string(),
+    ];
+    editor.en.paragraphs = vec![
+        "Start with a direct answer to the reader's problem, then explain the decision criteria, the limits, and the concrete next steps. The goal is to publish useful, understandable, and precise content that can rank for a long-tail query.".to_string(),
+    ];
 }
 
 fn apply_monetized_template(editor: &mut PostEditorState) {

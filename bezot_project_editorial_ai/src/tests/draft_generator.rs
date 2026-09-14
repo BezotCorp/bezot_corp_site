@@ -9,13 +9,13 @@ fn builds_an_editor_state_from_a_well_formed_model_reply() {
             "title": "Titre FR",
             "slug": "blog/titre-fr",
             "description": "Description FR",
-            "paragraph": "Paragraphe FR"
+            "paragraphs": ["Paragraphe FR un", "Paragraphe FR deux"]
         },
         "en": {
             "title": "Title EN",
             "slug": "blog/title-en",
             "description": "Description EN",
-            "paragraph": "Paragraph EN"
+            "paragraphs": ["Paragraph EN"]
         }
     });
 
@@ -30,12 +30,19 @@ fn builds_an_editor_state_from_a_well_formed_model_reply() {
         "Texte généré par IA, relu et publié par Bezot Corp."
     );
     assert_eq!(editor.fr.slug, "blog/titre-fr");
+    assert_eq!(
+        editor.fr.paragraphs,
+        vec![
+            "Paragraphe FR un".to_string(),
+            "Paragraphe FR deux".to_string()
+        ]
+    );
     assert_eq!(editor.en.title, "AI Editorial: Title EN");
     assert_eq!(
         editor.en.subtitle,
         "AI-generated, reviewed, and published by Bezot Corp."
     );
-    assert_eq!(editor.en.paragraph, "Paragraph EN");
+    assert_eq!(editor.en.paragraphs, vec!["Paragraph EN".to_string()]);
 }
 
 #[test]
@@ -57,21 +64,21 @@ fn draft_content_is_unescaped() {
             "title": "Titre FR",
             "slug": "blog/titre-fr",
             "description": "Description FR",
-            "paragraph": "L&#39;article parle de Rust &amp; WebAssembly."
+            "paragraphs": ["L&#39;article parle de Rust &amp; WebAssembly."]
         },
         "en": {
             "title": "Title EN",
             "slug": "blog/title-en",
             "description": "Description EN",
-            "paragraph": "Paragraph EN"
+            "paragraphs": ["Paragraph EN"]
         }
     });
 
     let editor = editor_from_value(value).unwrap();
 
     assert_eq!(
-        editor.fr.paragraph,
-        "L'article parle de Rust & WebAssembly."
+        editor.fr.paragraphs,
+        vec!["L'article parle de Rust & WebAssembly.".to_string()]
     );
 }
 
@@ -82,7 +89,7 @@ fn rejects_a_reply_missing_a_locale() {
             "title": "Titre FR",
             "slug": "blog/titre-fr",
             "description": "Description FR",
-            "paragraph": "Paragraphe FR"
+            "paragraphs": ["Paragraphe FR"]
         }
     });
 

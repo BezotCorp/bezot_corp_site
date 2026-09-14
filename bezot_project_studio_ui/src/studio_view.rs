@@ -580,16 +580,46 @@ fn locale_editor_view<'a>(
                 locale,
                 PostField::Description
             ),
-            field_input(
-                "Paragraphe principal",
-                &editor.paragraph,
-                locale,
-                PostField::Paragraph
-            ),
+            paragraphs_editor_view(&editor.paragraphs, locale),
             monetization_editor_view(editor, locale),
         ]
         .spacing(10),
     )
+}
+
+fn paragraphs_editor_view(paragraphs: &[String], locale: Locale) -> Element<'_, Message> {
+    let mut list = column![text("Paragraphes").size(14)].spacing(8);
+    let count = paragraphs.len();
+
+    for (index, paragraph) in paragraphs.iter().enumerate() {
+        let mut controls = row![].spacing(6);
+
+        if index > 0 {
+            controls = controls.push(button("↑").on_press(Message::MoveParagraphUp(locale, index)));
+        }
+        if index + 1 < count {
+            controls =
+                controls.push(button("↓").on_press(Message::MoveParagraphDown(locale, index)));
+        }
+        controls =
+            controls.push(button("Supprimer").on_press(Message::RemoveParagraph(locale, index)));
+
+        list = list.push(
+            column![
+                labeled_input(
+                    format!("Paragraphe {}", index + 1),
+                    paragraph,
+                    move |value| Message::ParagraphChanged(locale, index, value)
+                ),
+                controls,
+            ]
+            .spacing(4),
+        );
+    }
+
+    list = list.push(button("Ajouter un paragraphe").on_press(Message::AddParagraph(locale)));
+
+    list.into()
 }
 
 fn monetization_editor_view<'a>(

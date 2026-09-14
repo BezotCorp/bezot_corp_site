@@ -101,30 +101,31 @@ impl PostLocaleDocument {
         description: String,
         editor: &common::PostLocaleEditor,
     ) -> Self {
-        let mut blocks = vec![
-            PostBlockDocument {
-                kind: "hero".to_string(),
-                props: PostBlockPropsDocument {
-                    title: Some(title.clone()),
-                    subtitle: Some(hero_subtitle(editor)),
-                    text: None,
-                    url: None,
-                    label: None,
-                    disclosure: None,
-                },
+        let mut blocks = vec![PostBlockDocument {
+            kind: "hero".to_string(),
+            props: PostBlockPropsDocument {
+                title: Some(title.clone()),
+                subtitle: Some(hero_subtitle(editor)),
+                text: None,
+                url: None,
+                label: None,
+                disclosure: None,
             },
-            PostBlockDocument {
+        }];
+
+        for paragraph in &editor.paragraphs {
+            blocks.push(PostBlockDocument {
                 kind: "paragraph".to_string(),
                 props: PostBlockPropsDocument {
                     title: None,
                     subtitle: None,
-                    text: Some(editor.paragraph.clone()),
+                    text: Some(paragraph.clone()),
                     url: None,
                     label: None,
                     disclosure: None,
                 },
-            },
-        ];
+            });
+        }
 
         if !editor.affiliate_url.trim().is_empty() {
             blocks.push(PostBlockDocument {

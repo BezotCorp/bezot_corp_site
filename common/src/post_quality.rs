@@ -21,8 +21,8 @@ pub struct PostQualityCheck {
 
 impl PostQualityReport {
     pub fn analyze(editor: &PostEditorState) -> Self {
-        let french_words = word_count(&editor.fr.paragraph);
-        let english_words = word_count(&editor.en.paragraph);
+        let french_words = word_count(&editor.fr.paragraphs.join(" "));
+        let english_words = word_count(&editor.en.paragraphs.join(" "));
         let total_words = french_words + english_words;
         let reading_minutes = (total_words / 220).max(1);
 

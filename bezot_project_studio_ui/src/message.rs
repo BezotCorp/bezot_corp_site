@@ -33,6 +33,11 @@ pub(crate) enum Message {
     PostStatusChanged(String),
     PostAuthorChanged(String),
     PostFieldChanged(Locale, PostField, String),
+    AddParagraph(Locale),
+    RemoveParagraph(Locale, usize),
+    MoveParagraphUp(Locale, usize),
+    MoveParagraphDown(Locale, usize),
+    ParagraphChanged(Locale, usize, String),
 
     NewPage,
     SavePage,
