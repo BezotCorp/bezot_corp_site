@@ -11,15 +11,20 @@ use crate::page_field::PageField;
 use crate::preview_view::real_preview_panel;
 use crate::studio_state::StudioState;
 use crate::styles::accent_panel_style;
-use crate::widgets::{delete_button, labeled_input, panel, section_title, status_chip};
+use crate::widgets::{
+    delete_button, labeled_input, panel, save_button_label, section_title, status_chip,
+};
 
 pub(crate) fn page_workspace_view(state: &StudioState) -> Element<'_, Message> {
     let editor = &state.page_editor;
-    let save_label = if state.edited_page_exists() {
-        "Mettre à jour la page existante"
-    } else {
-        "Enregistrer cette nouvelle page"
-    };
+    let will_publish = editor.fr.status == "published" || editor.en.status == "published";
+    let save_label = save_button_label(
+        state.saving,
+        will_publish,
+        state.edited_page_exists(),
+        "Mettre à jour la page existante",
+        "Enregistrer cette nouvelle page",
+    );
 
     container(
         column![
@@ -38,7 +43,7 @@ pub(crate) fn page_workspace_view(state: &StudioState) -> Element<'_, Message> {
     .into()
 }
 
-fn current_page_banner<'a>(state: &'a StudioState, save_label: &'a str) -> Element<'a, Message> {
+fn current_page_banner<'a>(state: &'a StudioState, save_label: String) -> Element<'a, Message> {
     let selected = state
         .selected_entry_id
         .as_deref()
@@ -63,7 +68,8 @@ fn current_page_banner<'a>(state: &'a StudioState, save_label: &'a str) -> Eleme
             .spacing(10),
             row![
                 button("Nouvelle page").on_press(Message::NewPage),
-                button(save_label).on_press(Message::SavePage),
+                button(text(save_label))
+                    .on_press_maybe((!state.saving).then_some(Message::SavePage)),
                 delete_button(
                     state.edited_page_exists(),
                     state.confirm_delete,

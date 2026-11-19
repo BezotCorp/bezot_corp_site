@@ -37,6 +37,7 @@ pub struct StudioState {
     pub media_assets: Vec<MediaAsset>,
     pub preview_starting: bool,
     pub preview: Option<PreviewSession>,
+    pub saving: bool,
     pub notice: Option<String>,
     pub error: Option<String>,
 }

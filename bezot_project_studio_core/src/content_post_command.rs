@@ -44,7 +44,14 @@ fn save_post_from_stdin(project_root: &Path) -> io::Result<()> {
     let mut source = String::new();
     io::stdin().read_to_string(&mut source)?;
     let editor = serde_json::from_str::<PostEditorState>(&source).map_err(invalid_data)?;
-    save_post(project_root, &editor)
+    save_post(project_root, &editor)?;
+
+    if editor.status == "published" {
+        let summary = format!("chore: publish \"{}\"", editor.fr.title);
+        crate::git_publisher::publish_content_change(project_root, &editor.id, &summary)?;
+    }
+
+    Ok(())
 }
 
 /// Builds an isolated copy of the project, saves the given (possibly
